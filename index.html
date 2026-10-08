@@ -897,7 +897,7 @@ function drawPosters() {
   }).join('');
   $('posters').innerHTML = html; $('home-posters').innerHTML = html;
   const n = OUT_ORDER.filter(k => S.caught[k]).length;
-  $('poster-count').textContent = `${n} of 12 Interval Outlaws lassoed${getProfile() ? '' : isGuest() ? '. Guests\' posters aren\'t saved.' : '. Sign in to save your posters.'}`;
+  $('poster-count').textContent = `${n} of 12 Interval Outlaws lassoed${getProfile() ? '. Saved with your sign-in, so your wall follows you to any computer.' : isGuest() ? '. Guests\' posters aren\'t saved.' : '. Sign in to save your posters on any computer.'}`;
 }
 function drawHUD() {
   $('hud-bank').textContent = '$' + S.bank;
@@ -1406,7 +1406,7 @@ function go(v) {
   if ((v === 'songbook' || v === 'board') && cur !== v) prevView = cur;
   VIEWS.forEach(x => { $(x).hidden = x !== v; });
   window.scrollTo(0, 0); hideTip();
-  if (v === 'home') { drawPosters(); updateWho(); }
+  if (v === 'home') { drawPosters(); updateWho(); pullPosters(); }
 }
 function goHome() { stopClock(); S.tok++; S.phase = 'idle'; $('overlay').classList.remove('on'); $('intro').classList.remove('on'); if (S.stingBus) { S.stingBus.disconnect(); S.stingBus = null; } go('home'); }
 
@@ -1605,13 +1605,14 @@ $('w-solo').addEventListener('change', e => { $('w-code').disabled = e.target.ch
 $('w-code').addEventListener('input', e => { const c = cleanCode(e.target.value); if (c !== e.target.value) e.target.value = c; });
 $('w-guest').addEventListener('click', () => { try { sessionStorage.setItem(GUEST_KEY, '1'); } catch {} $('welcome').hidden = true; afterWho(); });
 $('welcome').addEventListener('click', e => { if (e.target === $('welcome')) $('welcome').hidden = true; });
-function afterWho() { updateWho(); loadPosters(); drawPosters(); syncSaveLine(); }
+function afterWho() { updateWho(); loadPosters(); drawPosters(); syncSaveLine(); pullPosters(); }
 async function refreshClass() {
   const p = getProfile(); if (!p || !p.classCode) return;
   try {
     const { fs, db } = await fb(), d = await wait(fs.getDoc(fs.doc(db, 'classes', p.classCode)));
     setProfile(d.exists() ? { ...p, className: d.data().name, classOwner: d.data().ownerEmail || '' } : { ...p, classCode: '', className: '', classOwner: '' });
     updateWho();
+    if (!d.exists()) pullPosters();
   } catch {}
 }
 // a sign-in made in another game's tab shows up here too
@@ -1629,6 +1630,47 @@ function loadPosters() {
 function savePosters() {
   const p = getProfile(); if (!p) return;
   try { localStorage.setItem(POSTERS_KEY + sidOf(p), JSON.stringify({ caught: S.caught, seen: S.seen })); } catch {}
+  pushPosters();
+}
+// Online copy (earshot_posters): the wall follows the student to any computer.
+// Every sync keeps the larger count for each outlaw, so two computers never undo each other's catches.
+const POSTERS_COL = 'earshot_posters';
+const posterDocId = p => `${p.classCode || 'none'}_${sidOf(p)}`;
+let posterPushT = null;
+function mergeCloud(c) {
+  let gained = false, behind = false;
+  OUT_ORDER.forEach(k => {
+    const cc = Number.isInteger(c?.caught?.[k]) ? c.caught[k] : 0, lc = S.caught[k] || 0;
+    if (cc > lc) { S.caught[k] = cc; gained = true; } else if (lc > cc) behind = true;
+    const cs = !!c?.seen?.[k];
+    if (cs && !S.seen[k]) { S.seen[k] = 1; gained = true; } else if (S.seen[k] && !cs) behind = true;
+  });
+  return { gained, behind };
+}
+async function pullPosters() {
+  const p = getProfile(); if (!p || sidOf(p).length < 2) return;
+  try {
+    const { fs, db } = await fb(), d = await wait(fs.getDoc(fs.doc(db, POSTERS_COL, posterDocId(p))));
+    const now = getProfile(); if (!now || posterDocId(now) !== posterDocId(p)) return;
+    const { gained, behind } = mergeCloud(d.exists() ? d.data() : null);
+    if (gained) { try { localStorage.setItem(POSTERS_KEY + sidOf(p), JSON.stringify({ caught: S.caught, seen: S.seen })); } catch {} drawPosters(); }
+    if (behind) pushPosters();
+  } catch (e) { console.warn('posters: could not load the online copy', e && e.code); }
+}
+function pushPosters() {
+  clearTimeout(posterPushT);
+  posterPushT = setTimeout(async () => {
+    const p = getProfile(); if (!p || sidOf(p).length < 2) return;
+    try {
+      // Milnes D. writes with his Google sign-in (the rules reserve that name)
+      if (isDevName(displayName(p))) { const { auth } = await fbAuth(); if (auth.authStateReady) await auth.authStateReady(); }
+      const { fs, db } = await fb(), ref = fs.doc(db, POSTERS_COL, posterDocId(p));
+      const d = await wait(fs.getDoc(ref));
+      if (d.exists() && mergeCloud(d.data()).gained) drawPosters();
+      await wait(fs.setDoc(ref, { name: displayName(p), class_code: p.classCode || '', sid: sidOf(p),
+        caught: { ...S.caught }, seen: Object.fromEntries(Object.keys(S.seen).map(k => [k, true])), updated_at: fs.serverTimestamp() }));
+    } catch (e) { console.warn('posters: not saved online this time', e && e.code); }
+  }, 1200);
 }
 
 /* ---------- Leaderboard ---------- */
@@ -1800,7 +1842,7 @@ $('songbook').addEventListener('click', e => { const b = e.target.closest('[data
 /* ---------- Start ---------- */
 [['hud-bank', 'bank'], ['hud-best', 'bust'], ['hud-chip', 'chip'], ['hud-streak', 'streak'], ['hud-hand', 'handno'], ['cashout', 'cash'], ['again', 'again'], ['hank', 'hank'], ['songbook-btn', 'songbook'], ['songbook-btn-home', 'songbook'], ['townsign', 'town'], ['clock', 'noon']]
   .forEach(([id, k]) => { const el = $(id); (el.closest('.stat') || el).dataset.tip = TIPS[k]; });
-loadSettings(); drawHome(); dealerSVG(); loadPosters(); updateWho(); drawPosters(); refreshClass();
+loadSettings(); drawHome(); dealerSVG(); loadPosters(); updateWho(); drawPosters(); refreshClass(); pullPosters();
 document.fonts?.load('40px "Noto Music"', '\u{1D11E}\u{1D122}♯♭\u{1D12B}\u{1D12A}').then(() => { if (S.hand) refreshFaces(S.phase === 'result'); }).catch(() => {});
 </script>
 </body>
