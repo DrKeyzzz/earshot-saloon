@@ -1193,6 +1193,7 @@ function choose(i) {
   const st = S.stats; st.total++; const ivKey = SHORT(h.key) + (h.harmonic ? ' (together)' : h.dir > 0 ? ' ↑' : ' ↓');
   st.byIv[ivKey] = st.byIv[ivKey] || [0, 0, outl.name]; st.byIv[ivKey][1]++;
   st.byKey[h.key] = st.byKey[h.key] || [0, 0]; st.byKey[h.key][1]++;
+  MTG_HIST.note('earshot', [histLabel(h.key), h.harmonic ? 'Both notes at once' : h.dir < 0 ? 'Intervals going down' : null], right);
   if (right) { st.right++; st.byIv[ivKey][0]++; st.byKey[h.key][0]++; }
   else if (i >= 0) { const m = `${IV[h.cards[i].k].num === iv.num ? IV[h.cards[i].k].name : ord(IV[h.cards[i].k].num)} when it was a ${iv.disg ? iv.name : (IV[h.cards[i].k].num === iv.num ? iv.name : ord(iv.num))}`; st.mix[m] = (st.mix[m] || 0) + 1; }
 
@@ -1301,6 +1302,7 @@ function bluffCall(saysCheat) {
   S.phase = 'result';
   const h = S.hand, right = saysCheat === h.bluff.cheat, cv = chipVal();
   S.stats.bluff[1]++; if (right) S.stats.bluff[0]++;
+  MTG_HIST.note('earshot', ["Catching Clara's cheats"], right);
   let line;
   if (right && h.bluff.cheat) { S.bank += 2 * cv; S.streak++; sfx.win(); line = `Caught her! She played it <b>${Math.abs(h.bluff.off) === 1 ? 'a half step' : 'a whole step'} ${h.bluff.off > 0 ? 'high' : 'low'}</b>. You win <b>$${2 * cv}</b> (double).`; }
   else if (right) { S.bank += cv; S.streak++; sfx.win(); line = `Fair and square. You win <b>$${cv}</b>.`; }
@@ -1510,6 +1512,7 @@ function endRun(busted) {
   lastRun = { score: busted ? Math.floor(S.best / 2) : S.bank, busted, hands: st.total, acc: st.total ? Math.round(st.right / st.total * 100) : 0,
     town: S.town + 1, outlaws: st.lassoed.length, diff: S.diff, clef: S.clef, wasGuest: !getProfile() };
   savedRunId = null;
+  if (st.total > 0) MTG_HIST.run('earshot', { score: lastRun.score, level: lastRun.town, acc: lastRun.acc, caught: lastRun.outlaws });
   showReport();
   if (getProfile() && st.total > 0) saveRun();
 }
@@ -1848,6 +1851,59 @@ function pushPosters() {
   }, 1200);
 }
 
+/* ---------- Music Theory Games: shared practice history for the student report (identical in every game) ----------
+   One localStorage key per student, 'mtg_hist_v1:<first+initial>', kept with no time limit:
+   { v: 1, name, days: { 'YYYY-MM-DD': { <game>: { plays, answers, correct, ms, best, level, bpm, caught, skills: { label: [right, total] }, last } } } }
+   The report at https://drkeyzzz.github.io/report/ reads it. Guests are not recorded. */
+const MTG_HIST = (() => {
+  const prof = () => { try { if (sessionStorage.getItem('music_guest') === '1') return null; const p = JSON.parse(localStorage.getItem('rdt_profile_v1') || 'null'); return p && p.first && p.init ? p : null; } catch { return null; } };
+  const day = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  function edit(game, fn) {
+    const p = prof(); if (!p) return;
+    const k = 'mtg_hist_v1:' + (p.first + p.init).toLowerCase().replace(/[^a-z]/g, '');
+    let h = null; try { h = JSON.parse(localStorage.getItem(k) || 'null'); } catch {}
+    if (!h || !h.days) h = { v: 1, days: {} };
+    h.name = `${p.first.charAt(0).toUpperCase()}${p.first.slice(1)} ${p.init}.`; h.classCode = p.classCode || '';
+    const d = h.days[day()] || (h.days[day()] = {});
+    const g = d[game] || (d[game] = { plays: 0, answers: 0, correct: 0, ms: 0, best: 0, level: 0, skills: {}, last: 0 });
+    fn(g);
+    try { localStorage.setItem(k, JSON.stringify(h)); } catch {}
+  }
+  return {
+    // one answered note/question/rhythm: ok = right; labels = the skills it shows (e.g. ['Eighth notes', 'F4'])
+    note(game, labels, ok) {
+      edit(game, g => {
+        const now = Date.now();
+        if (g.last && now - g.last < 600000) g.ms += now - g.last;     // gaps over 10 minutes aren't practice time
+        g.last = now; g.answers++; if (ok) g.correct++;
+        for (const lab of [].concat(labels || [])) { if (!lab) continue; const s = g.skills[lab] || (g.skills[lab] = [0, 0]); s[1]++; if (ok) s[0]++; }
+      });
+    },
+    // one finished game or round
+    run(game, r) {
+      edit(game, g => {
+        g.plays++; g.best = Math.max(g.best, Math.round(r.score || 0)); g.level = Math.max(g.level, r.level || 0);
+        if (r.bpm) g.bpm = Math.max(g.bpm || 0, r.bpm);
+        if (r.caught) g.caught = (g.caught || 0) + r.caught;
+        if (r.acc != null) g.acc = Math.max(g.acc || 0, Math.round(r.acc));
+      });
+    },
+  };
+})();
+// the skill name My Report shows for an interval (the tritone's two spellings count as one)
+const histLabel = k => k === 'A4' || k === 'd5' ? 'Tritone' : cap(IV[k].name);
+
+/* ---------- "Practice this" links from My Report: ?focus=<interval> sets up practice on it ---------- */
+function applyFocusFromUrl() {
+  const q = new URLSearchParams(location.search), f = q.get('focus'); if (!f) return;
+  q.delete('focus'); history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
+  const keys = Object.keys(IV).filter(k => histLabel(k) === f);
+  if (!keys.length) return;
+  S.mode = 'practice'; S.practice = { ivs: keys, dir: S.diff === 'newbie' || S.diff === 'easy' ? 'up' : 'both', sound: 'mel' };
+  saveSettings(); drawHome();
+  toast(`🎯 Practice set up: <b>${esc(f)}</b>. Press Start practice!`, 6000);
+}
+
 /* ---------- Leaderboard ---------- */
 let boardScope = 'world', boardDiff = 'all', boardClef = 'all', boardRowsAll = [], boardState = 'loading', boardTok = 0;
 const BOARD_N = 60, BOARD_TTL = 60000, boardCache = new Map(), noIndex = {};
@@ -2028,7 +2084,7 @@ $('songbook').addEventListener('click', e => { const b = e.target.closest('[data
 /* ---------- Start ---------- */
 [['hud-bank', 'bank'], ['hud-best', 'bust'], ['hud-chip', 'chip'], ['hud-streak', 'streak'], ['hud-hand', 'handno'], ['cashout', 'cash'], ['again', 'again'], ['hank', 'hank'], ['songbook-btn', 'songbook'], ['songbook-btn-home', 'songbook'], ['townsign', 'town'], ['clock', 'noon']]
   .forEach(([id, k]) => { const el = $(id); (el.closest('.stat') || el).dataset.tip = TIPS[k]; });
-loadSettings(); drawHome(); dealerSVG(); loadPosters(); updateWho(); drawPosters(); refreshClass(); pullPosters();
+loadSettings(); drawHome(); applyFocusFromUrl(); dealerSVG(); loadPosters(); updateWho(); drawPosters(); refreshClass(); pullPosters();
 document.fonts?.load('40px "Noto Music"', '\u{1D11E}\u{1D122}♯♭\u{1D12B}\u{1D12A}').then(() => { if (S.hand) refreshFaces(S.phase === 'result'); }).catch(() => {});
 </script>
 </body>
