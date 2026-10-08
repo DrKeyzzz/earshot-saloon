@@ -261,6 +261,45 @@ body:not(.practice) .practice-only { display: none !important; }
 .report .btns button { color: var(--ivory); }
 .report .btns button.go { color: var(--ink); }
 
+/* Reactions: sobbing and chuckling in the seat */
+.dealer { overflow: visible; transform-origin: 50% 85%; }
+.dealer.react-cry { animation: sob .32s ease-in-out infinite alternate; }
+.dealer.react-grin { animation: chuckle .2s ease-in-out 10 alternate; }
+@keyframes sob { from { transform: translateY(0) rotate(-2deg); } to { transform: translateY(3px) rotate(2deg); } }
+@keyframes chuckle { from { transform: translateY(0); } to { transform: translateY(-5px); } }
+.tearstream { fill: none; stroke: #7fd0ff; stroke-width: 3.4; stroke-linecap: round; stroke-dasharray: 6 4; opacity: .9; animation: flow .3s linear infinite; }
+@keyframes flow { to { stroke-dashoffset: -10; } }
+.heh text { font: 700 11px var(--f-ui); fill: #ffb0b0; opacity: 0; animation: heh 1.8s ease-out forwards; }
+.heh text:nth-child(2) { animation-delay: .35s; } .heh text:nth-child(3) { animation-delay: .7s; }
+@keyframes heh { 0% { opacity: 0; transform: translateY(6px); } 25% { opacity: 1; } 100% { opacity: 0; transform: translateY(-10px); } }
+
+/* The capture: the whole screen goes dark, the poster drops in, CAPTURED slams down, then it flies to the wall */
+.capture { position: fixed; inset: 0; z-index: 35; display: grid; place-items: center; align-content: center; gap: 18px; padding: 16px;
+  background: radial-gradient(ellipse at 50% 45%, rgba(70,34,12,.97), rgba(6,3,1,.99)); animation: introfade .4s ease-out; }
+.capture[hidden] { display: none !important; }
+.capture.shake { animation: capshake .45s; }
+@keyframes capshake { 10%, 50%, 90% { transform: translate(-8px, 4px); } 30%, 70% { transform: translate(8px, -4px); } 100% { transform: none; } }
+.cap-inner { position: relative; width: min(440px, 80vw, 52vh); }
+.cap-poster { background: var(--paper); color: var(--ink); padding: 12px 14px 14px; border-radius: 3px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.8);
+  animation: capdrop .8s cubic-bezier(.2,1.4,.4,1) both; transform: rotate(-2deg); }
+.cap-poster .w { font-family: var(--f-display); font-size: clamp(40px, 11vw, 64px); line-height: 1; }
+.cap-poster svg { display: block; width: 100%; height: auto; margin: 6px 0; border: 3px solid #b89a5e; }
+.cap-poster .n { font-family: var(--f-display); font-size: clamp(22px, 6vw, 32px); }
+.cap-poster .i { font-weight: 700; font-size: 17px; color: #6b5a3e; }
+@keyframes capdrop { from { transform: translateY(-80vh) rotate(-14deg); } to { transform: rotate(-2deg); } }
+.cap-stamp { position: absolute; left: 50%; top: 66%; font-family: var(--f-display); font-size: clamp(48px, 14vw, 88px); letter-spacing: .04em; line-height: 1;
+  color: #c0201a; border: 8px solid #c0201a; border-radius: 10px; padding: 6px 16px 2px; background: rgba(233,215,170,.25);
+  box-shadow: inset 0 0 0 4px rgba(233,215,170,.6), 0 0 0 3px rgba(192,32,26,.25);
+  transform: translate(-50%, -50%) rotate(-16deg) scale(4); opacity: 0; pointer-events: none; mix-blend-mode: multiply; white-space: nowrap; }
+.cap-stamp.slam { animation: slam .3s cubic-bezier(.6,0,.9,.5) forwards; }
+@keyframes slam { to { transform: translate(-50%, -50%) rotate(-16deg) scale(1); opacity: .95; } }
+.cap-bounty { font-family: var(--f-display); font-size: clamp(26px, 7vw, 40px); color: var(--gold); text-shadow: 0 3px 0 #000; opacity: 0; transform: translateY(14px); transition: opacity .4s, transform .4s; }
+.cap-bounty.on { opacity: 1; transform: none; }
+#cap-go { animation: none; }
+#cap-go:disabled { visibility: hidden; }
+.poster.justcaught { animation: wallstamp .7s cubic-bezier(.2,1.6,.4,1); z-index: 2; }
+@keyframes wallstamp { 0% { transform: scale(1.6) rotate(-6deg); box-shadow: 0 0 0 4px var(--gold), 0 0 30px var(--gold); } 100% { transform: rotate(var(--tilt, 0deg)); } }
+
 .tip { position: fixed; z-index: 40; max-width: 290px; padding: 9px 12px; border-radius: 10px; background: var(--paper); color: var(--ink); font-size: 14.5px; line-height: 1.35; box-shadow: 0 8px 22px rgba(0,0,0,.55); border: 2px solid #b89a5e; pointer-events: none; opacity: 0; transform: translateY(4px); transition: opacity .15s, transform .15s; }
 .tip.on { opacity: 1; transform: none; }
 .tip b { color: var(--red); }
@@ -512,6 +551,15 @@ button.big:not(:disabled) { animation: rise .5s 1.5s both, glow 1.4s 2s ease-in-
     <button id="w-guest" type="button">Play as guest</button>
     <p class="wnote">Guests' scores aren't saved. One sign-in works for every game on Mr. Milnes's Music Theory Games.</p>
   </form>
+</div>
+
+<div class="capture" id="capture" hidden role="dialog" aria-modal="true" aria-label="Outlaw captured">
+  <div class="cap-inner" id="cap-inner">
+    <div class="cap-poster" id="cap-poster"></div>
+    <div class="cap-stamp" id="cap-stamp">CAPTURED</div>
+  </div>
+  <div class="cap-bounty" id="cap-bounty"></div>
+  <button type="button" class="go big" id="cap-go" disabled>Collect the bounty 💰 ↵</button>
 </div>
 
 <div class="intro" id="intro" role="dialog" aria-modal="true" aria-label="Mini-game"><div class="intro-card" id="intro-card"></div></div>
@@ -815,6 +863,22 @@ const sfx = {
   win: () => { const t = ac().currentTime; [72, 76, 79].forEach((m, i) => blip(440 * 2 ** ((m - 69) / 12), t + i * .07, .35, 'triangle', .08)); },
   lose: () => { const t = ac().currentTime; blip(130, t, .35, 'sawtooth', .07); blip(98, t + .12, .45, 'sawtooth', .07); },
   tick: () => blip(1500, ac().currentTime, .03, 'square', .04),
+  // a wobbly "waaah… waaaah"
+  cry: () => {
+    const c = ac(), t0 = c.currentTime + .05;
+    [[0, 760, 520, .55], [.65, 700, 360, 1.0]].forEach(([d, f1, f2, len]) => {
+      const o = c.createOscillator(), g = c.createGain(), lp = c.createBiquadFilter(), lfo = c.createOscillator(), lg = c.createGain();
+      o.type = 'sawtooth'; lp.type = 'lowpass'; lp.frequency.value = 1800;
+      o.frequency.setValueAtTime(f1, t0 + d); o.frequency.exponentialRampToValueAtTime(f2, t0 + d + len);
+      lfo.frequency.value = 7; lg.gain.value = 18; lfo.connect(lg); lg.connect(o.frequency);
+      g.gain.setValueAtTime(0, t0 + d); g.gain.linearRampToValueAtTime(.05, t0 + d + .06); g.gain.exponentialRampToValueAtTime(.0005, t0 + d + len + .1);
+      o.connect(lp); lp.connect(g); g.connect(MASTER); [o, lfo].forEach(x => { x.start(t0 + d); x.stop(t0 + d + len + .15); });
+    });
+  },
+  // a sly "heh heh heh"
+  evil: () => { const t = ac().currentTime + .05; [220, 196, 175].forEach((f, i) => { blip(f, t + i * .2, .14, 'square', .045); noise(t + i * .2, .05, .05); }); },
+  // the big stamp landing
+  thud: () => { const c = ac(), t = c.currentTime, o = c.createOscillator(), g = c.createGain(); o.frequency.setValueAtTime(140, t); o.frequency.exponentialRampToValueAtTime(40, t + .35); g.gain.setValueAtTime(.35, t); g.gain.exponentialRampToValueAtTime(.0005, t + .45); o.connect(g); g.connect(MASTER); o.start(t); o.stop(t + .5); noise(t, .12, .35); },
   lasso: () => { const c = ac(), t = c.currentTime, o = c.createOscillator(), g = c.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(300, t); o.frequency.exponentialRampToValueAtTime(1400, t + .45); g.gain.setValueAtTime(.09, t); g.gain.exponentialRampToValueAtTime(.0005, t + .5); o.connect(g); g.connect(MASTER); o.start(t); o.stop(t + .55);
     [67, 71, 74, 79].forEach((m, i) => blip(440 * 2 ** ((m - 69) / 12), t + .5 + i * .09, .5, 'sawtooth', .045)); },
 };
@@ -870,7 +934,33 @@ function dealerSVG() {
   <ellipse cx="60" cy="27" rx="38" ry="7" fill="#3a2414"/>
   <path d="M38 27 Q40 6 60 6 Q80 6 82 27 Z" fill="#4a2e18"/><rect x="39" y="20" width="42" height="5" fill="#b8322a"/>`;
 }
-function outlawSVG(o, w = 60) {
+/* Reaction faces for Clara and the outlaws: 'cry' when the player beats them (Peanuts-style
+   fountains of tears), 'grin' when they win. Drawn around the midpoint between the eyes, at eye spacing 16. */
+function moodFace(mood, cx, cy, sc, uid = '') {
+  const ink = '#2a1d12';
+  let g = '';
+  if (mood === 'cry') {
+    const L = 'M-10 2 C-24 -14 -46 -10 -60 34', R = 'M10 2 C24 -14 46 -10 60 34';
+    g = `<path d="M-13 -6 L-4 -11" stroke="${ink}" stroke-width="2.6" stroke-linecap="round"/><path d="M13 -6 L4 -11" stroke="${ink}" stroke-width="2.6" stroke-linecap="round"/>
+      <path d="M-12 1 Q-8 -3.5 -4 1" stroke="${ink}" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M4 1 Q8 -3.5 12 1" stroke="${ink}" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+      <ellipse cx="0" cy="15" rx="6.5" ry="7.5" fill="#3a1010"/><ellipse cx="0" cy="19.5" rx="4" ry="2.3" fill="#c0504a"/>
+      <path d="M-9 3 Q-10.5 9 -8.5 14" stroke="#7fd0ff" stroke-width="2.2" fill="none" stroke-linecap="round"/><path d="M9 3 Q10.5 9 8.5 14" stroke="#7fd0ff" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+      <path class="tearstream" d="${L}"/><path class="tearstream" d="${R}"/>
+      ${[0, .3, .6].map(b => `<circle r="2.6" fill="#a9e2ff"><animateMotion dur=".9s" begin="${b}s" repeatCount="indefinite" path="${L}"/></circle><circle r="2.6" fill="#a9e2ff"><animateMotion dur=".9s" begin="${b + .15}s" repeatCount="indefinite" path="${R}"/></circle>`).join('')}`;
+  } else if (mood === 'grin') {
+    g = `<path d="M-13 -10 L-3 -4.5" stroke="${ink}" stroke-width="3" stroke-linecap="round"/><path d="M13 -10 L3 -4.5" stroke="${ink}" stroke-width="3" stroke-linecap="round"/>
+      <ellipse cx="-8" cy="0.5" rx="4.2" ry="2.6" fill="#fff"/><ellipse cx="8" cy="0.5" rx="4.2" ry="2.6" fill="#fff"/>
+      <circle cx="-6.2" cy="1" r="1.7" fill="${ink}"/><circle cx="9.8" cy="1" r="1.7" fill="${ink}"/>
+      <path d="M-12.6 -0.8 L-3.4 -0.4" stroke="${ink}" stroke-width="2.2" stroke-linecap="round"/><path d="M3.4 -0.4 L12.6 -0.8" stroke="${ink}" stroke-width="2.2" stroke-linecap="round"/>
+      <path d="M-13 9 Q0 25 13 9 Q0 15.5 -13 9 Z" fill="#fff" stroke="${ink}" stroke-width="1.6" stroke-linejoin="round"/>
+      <path d="M-7 11.6 V16.4 M0 12.8 V19 M7 11.6 V16.4" stroke="${ink}" stroke-width="1"/>
+      <rect x="1" y="13" width="5" height="4.6" fill="#e6b84c"/>`;
+  }
+  return `<g transform="translate(${cx} ${cy}) scale(${sc})">${g}</g>`;
+}
+// "heh heh heh" floats up beside a grinning character
+const HEH = `<g class="heh"><text x="96" y="30">heh</text><text x="104" y="16">heh</text><text x="112" y="2">heh!</text></g>`;
+function outlawSVG(o, w = 60, mood = 'normal') {
   const hatTop = o.tall ? 6 : 12;
   return `<svg viewBox="0 0 60 56" width="${w}" aria-hidden="true">
     <rect x="0" y="0" width="60" height="56" fill="#d8c395"/>
@@ -878,11 +968,30 @@ function outlawSVG(o, w = 60) {
     ${o.hair ? '<path d="M14 34 Q12 18 30 16 Q48 18 46 34 Q44 44 40 46 L20 46 Q16 44 14 34 Z" fill="#5a3418"/>' : ''}
     <ellipse cx="30" cy="30" rx="11" ry="12" fill="#e8b98e"/>
     <path d="M19 33 Q30 46 41 33 L41 40 Q30 50 19 40 Z" fill="${o.band}"/>
-    <circle cx="26" cy="28" r="1.5" fill="#2a1d12"/><circle cx="34" cy="28" r="1.5" fill="#2a1d12"/>
+    ${mood === 'normal' ? '<circle cx="26" cy="28" r="1.5" fill="#2a1d12"/><circle cx="34" cy="28" r="1.5" fill="#2a1d12"/>' : ''}
     ${o.must ? '<path d="M23 34 Q30 30 37 34 Q30 33 23 34 Z" fill="#3a2414"/>' : ''}
+    ${moodFace(mood, 30, 28, .5)}
     <ellipse cx="30" cy="19" rx="20" ry="3.6" fill="${o.hat}"/>
     <path d="M19 19 Q20 ${hatTop} 30 ${hatTop} Q40 ${hatTop} 41 19 Z" fill="${o.hat}"/>
     <rect x="19.5" y="15.5" width="21" height="2.6" fill="${o.band}"/></svg>`;
+}
+// An outlaw sitting across the table at High Noon (same layout as the dealer)
+function outlawSeatSVG(o, mood = 'normal') {
+  const top = o.tall ? 0 : 7, coat = '#5a3a20';
+  return `<ellipse cx="60" cy="108" rx="44" ry="8" fill="rgba(0,0,0,.35)"/>
+    <path d="M22 112 Q24 74 60 70 Q96 74 98 112 Z" fill="${coat}"/>
+    <path d="M46 72 L60 92 L74 72" fill="#e8dcc0"/>
+    ${o.hair ? '<path d="M38 52 Q34 24 60 22 Q86 24 82 52 Q80 70 72 74 L48 74 Q40 70 38 52 Z" fill="#5a3418"/>' : ''}
+    <rect x="53" y="58" width="14" height="14" fill="#d9a77c"/>
+    <ellipse cx="60" cy="46" rx="19" ry="21" fill="#e8b98e"/>
+    <path d="M42 62 Q60 76 78 62 L78 70 Q60 86 42 70 Z" fill="${o.band}"/>
+    ${mood === 'normal' ? '<circle cx="53" cy="42" r="2.2" fill="#2a1d12"/><circle cx="67" cy="42" r="2.2" fill="#2a1d12"/><path d="M53 56 Q61 59 67 54" stroke="#2a1d12" stroke-width="2.2" fill="none" stroke-linecap="round"/>' : ''}
+    ${o.must ? '<path d="M44 52 Q52 46 60 50 Q68 46 76 52 Q72 57 65 54 Q60 52 55 54 Q48 57 44 52 Z" fill="#3a2414"/>' : ''}
+    ${moodFace(mood, 60, 42, .88)}
+    <ellipse cx="60" cy="27" rx="${o.tall ? 32 : 37}" ry="7" fill="${o.hat}"/>
+    <path d="M40 27 Q41 ${top} 60 ${top} Q79 ${top} 80 27 Z" fill="${o.hat}"/>
+    <rect x="40.5" y="19" width="39" height="5" fill="${o.band}"/>
+    ${mood === 'grin' ? HEH : ''}`;
 }
 function outlawsInPlay() { return new Set(POOLS[S.diff].map(k => IV[k].out)); }
 function drawPosters() {
@@ -891,7 +1000,7 @@ function drawPosters() {
     const o = OUTLAWS[k], c = S.caught[k] || 0;
     const star = c >= 10 ? '🥇' : c >= 3 ? '🥈' : '⭐';
     const cls = ['poster', live.has(k) ? '' : 'off', c ? 'caught' : '', !live.has(k) || c || S.seen[k] ? '' : 'unknown'].join(' ');
-    return `<div class="${cls}" style="--tilt:${(i % 3 - 1) * 1.5}deg" data-tip="<b>${o.name}</b>, the ${o.iv}<br>${!live.has(k) ? 'Not on this trail. Try a harder difficulty.' : c ? `Lassoed ${c}× at High Noon. ${c >= 10 ? 'Gold star!' : c >= 3 ? 'Silver star. 10 catches for gold.' : '3 catches for a silver star.'}` : 'Still WANTED. Beat this outlaw at High Noon to lasso them.'}">
+    return `<div class="${cls}" data-k="${k}" style="--tilt:${(i % 3 - 1) * 1.5}deg" data-tip="<b>${o.name}</b>, the ${o.iv}<br>${!live.has(k) ? 'Not on this trail. Try a harder difficulty.' : c ? `Lassoed ${c}× at High Noon. ${c >= 10 ? 'Gold star!' : c >= 3 ? 'Silver star. 10 catches for gold.' : '3 catches for a silver star.'}` : 'Still WANTED. Beat this outlaw at High Noon to lasso them.'}">
       <div class="w">WANTED</div>${outlawSVG(o)}<div class="n">${o.name}</div><div class="i">${o.iv}</div>
       <div class="stamp">CAPTURED</div><div class="star">${star}</div></div>`;
   }).join('');
@@ -1122,19 +1231,32 @@ function afterHand() {
   if (S.noon && S.noon.done >= 3) {
     $('clock').classList.remove('on');
     const k = S.noon.out, o = OUTLAWS[k];
-    if (S.noon.won >= 2) {
-      S.caught[k] = (S.caught[k] || 0) + 1; savePosters(); const bounty = 5 * (S.town + 1) * chipVal();
-      S.bank += bounty; S.best = Math.max(S.best, S.bank); S.stats.lassoed.push(o.name);
-      setTimeout(() => { sfx.lasso(); toast(`🤠 Lassoed ${o.name}! Bounty $${bounty}`); say(`You lassoed <b>${o.name}</b>! The sheriff pays a <b>$${bounty}</b> bounty.`); drawPosters(); drawHUD(); }, 1600);
-    } else {
-      setTimeout(() => { sfx.lose(); say(`<b>${o.name}</b> got away, still WANTED. They might turn up in a later town.`); }, 1600);
-    }
-    setTimeout(() => {
+    const tok = S.tok;
+    const pressLuck = () => {
+      if (tok !== S.tok) return;
       const nextChip = 10 + 5 * (S.town + 1);
       say(`${S.noon.won >= 2 ? 'Nice work. ' : ''}<b>Press your luck?</b> Cash out now with <b>$${S.bank}</b>, or ride on to <b>${TOWNS[(S.town + 1) % TOWNS.length]}</b>, where every chip is worth <b>$${nextChip}</b>. Go bust and you only keep half your best ($${Math.floor(S.best / 2)}).`);
       setActions(`<button type="button" data-act="cashout">💰 Cash out $${S.bank}</button><button class="go" type="button" data-act="next">Ride on 🐎 ↵</button>`);
       drawHUD();
-    }, 3400);
+    };
+    setActions(`<span class="hint">&nbsp;</span>`);
+    if (S.noon.won >= 2) {
+      S.caught[k] = (S.caught[k] || 0) + 1; savePosters(); const bounty = 5 * (S.town + 1) * chipVal();
+      S.bank += bounty; S.best = Math.max(S.best, S.bank); S.stats.lassoed.push(o.name);
+      setTimeout(() => {
+        if (tok !== S.tok) return;
+        setSeat('outlaw', 'cry', k); sfx.lasso();
+        say(`You lassoed <b>${o.name}</b>! Look at 'em bawl. The sheriff pays a <b>$${bounty}</b> bounty.`);
+        showCapture(k, bounty, () => { drawHUD(); pressLuck(); });
+      }, 1300);
+    } else {
+      setTimeout(() => {
+        if (tok !== S.tok) return;
+        setSeat('outlaw', 'grin', k); sfx.evil();
+        say(`<b>${o.name}</b> grins and rides off, still WANTED. They might turn up in a later town.`);
+      }, 1300);
+      setTimeout(pressLuck, 4200);
+    }
     return;
   }
   if (S.bank < chipVal()) {
@@ -1185,25 +1307,26 @@ function bluffCall(saysCheat) {
   else if (h.bluff.cheat) { S.bank -= cv; S.streak = 0; sfx.lose(); line = `She cheated! The note was <b>${Math.abs(h.bluff.off) === 1 ? 'a half step' : 'a whole step'} ${h.bluff.off > 0 ? 'high' : 'low'}</b>. You lose $${cv}.`; }
   else { S.bank -= cv; S.streak = 0; sfx.lose(); line = `That was honest, partner. You lose $${cv}.`; }
   S.best = Math.max(S.best, S.bank);
-  say(line, 'Crooked Clara');
+  // you beat her: she bawls; she beats you: an evil grin
+  setTimeout(() => { setSeat('clara', right ? 'cry' : 'grin'); (right ? sfx.cry : sfx.evil)(); }, 450);
+  say(line + (right ? ' <i>Clara bursts into tears.</i>' : ' <i>Clara grins from ear to ear.</i>'), 'Crooked Clara');
   S.handNo++; drawHUD(); afterHand();
 }
 
 /* Mini-game ceremonies: a big entrance, a moment to take it in, then the player starts it */
-function claraSVG() {
+function claraSVG(mood = 'normal') {
   return `<svg viewBox="0 0 120 120" aria-hidden="true">
     <path d="M22 120 Q26 86 60 82 Q94 86 98 120 Z" fill="#6a2a5a"/>
     <path d="M44 84 L60 104 L76 84" fill="#f1ead8"/>
     <path d="M30 70 Q24 40 40 28 Q60 16 80 28 Q96 40 90 70 Q86 82 78 80 L42 80 Q34 82 30 70 Z" fill="#7a3a1a"/>
     <rect x="53" y="70" width="14" height="14" fill="#d9a77c"/>
     <ellipse cx="60" cy="56" rx="18" ry="20" fill="#e8b98e"/>
-    <path d="M48 52 Q52 49 56 52" stroke="#2a1d12" stroke-width="2.4" fill="none"/><path d="M64 52 Q68 49 72 52" stroke="#2a1d12" stroke-width="2.4" fill="none"/>
-    <path d="M52 66 Q60 71 69 64" stroke="#b8322a" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+    ${mood === 'normal' ? '<path d="M48 52 Q52 49 56 52" stroke="#2a1d12" stroke-width="2.4" fill="none"/><path d="M64 52 Q68 49 72 52" stroke="#2a1d12" stroke-width="2.4" fill="none"/><path d="M52 66 Q60 71 69 64" stroke="#b8322a" stroke-width="2.6" fill="none" stroke-linecap="round"/>' : moodFace(mood, 60, 52, 1)}
     <circle cx="70" cy="60" r="1.2" fill="#2a1d12"/><circle cx="42" cy="62" r="2.4" fill="#e6b84c"/>
     <ellipse cx="60" cy="36" rx="34" ry="7" fill="#4a1a4a"/><path d="M42 36 Q44 18 60 18 Q76 18 78 36 Z" fill="#5a2050"/>
     <path d="M74 22 Q96 2 104 14 Q92 14 86 26 Z" fill="#c070c0"/><path d="M76 24 Q100 10 106 24 Q94 22 86 30 Z" fill="#e090d0"/>
     <g transform="translate(78 92) rotate(-20)"><rect x="0" y="0" width="16" height="22" rx="2" fill="#f4ead2" stroke="#2a1d12"/><rect x="8" y="-2" width="16" height="22" rx="2" fill="#f4ead2" stroke="#2a1d12" transform="rotate(14 8 10)"/><rect x="16" y="-2" width="16" height="22" rx="2" fill="#b8322a" stroke="#f4ead2" transform="rotate(28 16 10)"/></g>
-    <ellipse cx="80" cy="100" rx="6" ry="5" fill="#e8b98e"/></svg>`;
+    <ellipse cx="80" cy="100" rx="6" ry="5" fill="#e8b98e"/>${mood === 'grin' ? HEH : ''}</svg>`;
 }
 function showIntro(html, btnLabel, onGo, sting) {
   const el = $('intro');
@@ -1274,10 +1397,16 @@ const stings = {
     blip(440 * 2 ** ((64 - 69) / 12), t + 1.8, .6, 'triangle', .1);
   },
 };
-function setSeat(who) {
-  const d = $('dealer');
-  if (who === 'clara') { d.setAttribute('viewBox', '0 0 120 120'); d.innerHTML = claraSVG().replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, ''); }
-  else if (d.getAttribute('viewBox') !== '0 0 120 112') { d.setAttribute('viewBox', '0 0 120 112'); dealerSVG(); }
+// Who sits across the table: the dealer, Crooked Clara, or a High Noon outlaw (with a mood)
+function setSeat(who, mood = 'normal', outlaw = '') {
+  const d = $('dealer'), key = [who, mood, outlaw].join('|');
+  if (d.dataset.seat === key) return;
+  d.dataset.seat = key;
+  if (who === 'clara') { d.setAttribute('viewBox', '0 0 120 120'); d.innerHTML = claraSVG(mood).replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, ''); }
+  else if (who === 'outlaw') { d.setAttribute('viewBox', '0 0 120 112'); d.innerHTML = outlawSeatSVG(OUTLAWS[outlaw], mood); }
+  else { d.setAttribute('viewBox', '0 0 120 112'); dealerSVG(); }
+  d.classList.remove('react-cry', 'react-grin');
+  if (mood !== 'normal') { void d.getBoundingClientRect(); d.classList.add('react-' + mood); }
 }
 function introBluff() {
   stopClock(); $('clock').classList.remove('on');
@@ -1303,9 +1432,45 @@ function introNoon() {
   say(`Folks are clearing the street…`, 'The dealer');
 }
 
+/* The capture ceremony */
+function showCapture(k, bounty, done) {
+  const o = OUTLAWS[k], el = $('capture'), stamp = $('cap-stamp'), go = $('cap-go');
+  $('cap-poster').innerHTML = `<div class="w">WANTED</div>${outlawSVG(o, 300, 'cry')}<div class="n">${o.name}</div><div class="i">the ${o.iv}</div>`;
+  stamp.classList.remove('slam'); $('cap-bounty').classList.remove('on'); $('cap-bounty').textContent = `+$${bounty} bounty`;
+  $('cap-inner').style.transform = ''; el.style.opacity = ''; go.disabled = true;
+  el.hidden = false; hideTip();
+  let finished = false;
+  const T = [];
+  T.push(setTimeout(() => { stamp.classList.add('slam'); }, 1100));
+  T.push(setTimeout(() => { sfx.thud(); el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); }, 1380));
+  T.push(setTimeout(() => { sfx.cry(); }, 1700));
+  T.push(setTimeout(() => { $('cap-bounty').classList.add('on'); sfx.chips(); setTimeout(sfx.chips, 180); }, 2100));
+  T.push(setTimeout(() => { go.disabled = false; go.focus(); }, 2600));
+  T.push(setTimeout(() => finish(), 9000)); // carries on by itself if nobody clicks
+  function finish() {
+    if (finished) return; finished = true; T.forEach(clearTimeout); go.disabled = true;
+    // the stamped poster shrinks down and flies to its spot on the wall
+    const wallPoster = document.querySelector(`#posters .poster[data-k="${k}"]`);
+    if (wallPoster) { wallPoster.scrollIntoView({ block: 'nearest', inline: 'center' }); window.scrollTo({ top: Math.max(0, $('posters').getBoundingClientRect().top + scrollY - 90) }); }
+    requestAnimationFrame(() => {
+      const inner = $('cap-inner'), a = inner.getBoundingClientRect(), b = wallPoster ? wallPoster.getBoundingClientRect() : null;
+      const after = () => {
+        el.hidden = true; el.classList.remove('shake'); inner.getAnimations().forEach(x => x.cancel());
+        drawPosters();
+        const p = document.querySelector(`#posters .poster[data-k="${k}"]`); if (p) p.classList.add('justcaught');
+        sfx.thud(); done();
+      };
+      if (!b || !inner.animate) return after();
+      const dx = b.left + b.width / 2 - (a.left + a.width / 2), dy = b.top + b.height / 2 - (a.top + a.height / 2), sc = b.width / a.width;
+      el.animate([{ backgroundColor: 'rgba(0,0,0,.6)' }, { opacity: 0 }], { duration: 1100, easing: 'ease-in', fill: 'forwards' });
+      inner.animate([{ transform: 'none' }, { transform: `translate(${dx}px, ${dy}px) scale(${sc}) rotate(-8deg)` }], { duration: 1100, easing: 'cubic-bezier(.5,0,.3,1)', fill: 'forwards' }).onfinish = after;
+    });
+  }
+  go.onclick = finish;
+}
+
 /* High Noon */
 function dealNoon() {
-  setSeat('dealer');
   if (!S.noon) {
     const live = [...outlawsInPlay()];
     const fresh = live.filter(k => !S.caught[k]);
@@ -1313,6 +1478,7 @@ function dealNoon() {
     const keys = POOLS[S.diff].filter(k => IV[k].out === out && !IV[k].disg);
     S.noon = { out, keys, done: 0, won: 0 };
   }
+  setSeat('outlaw', 'normal', S.noon.out);
   $('clock').classList.add('on'); $('clock-n').textContent = NOON_SECS;
   S.hand = buildHand(pick(S.noon.keys)); S.bet = 2; S.replays = 0; S.hankUsed = false;
   drawHUD(); drawHole(true); drawCards(); drawPiano({ ref: midiOf(S.hand.ref) });
@@ -1408,7 +1574,7 @@ function go(v) {
   window.scrollTo(0, 0); hideTip();
   if (v === 'home') { drawPosters(); updateWho(); pullPosters(); }
 }
-function goHome() { stopClock(); S.tok++; S.phase = 'idle'; $('overlay').classList.remove('on'); $('intro').classList.remove('on'); if (S.stingBus) { S.stingBus.disconnect(); S.stingBus = null; } go('home'); }
+function goHome() { stopClock(); S.tok++; S.phase = 'idle'; $('capture').hidden = true; $('overlay').classList.remove('on'); $('intro').classList.remove('on'); if (S.stingBus) { S.stingBus.disconnect(); S.stingBus = null; } go('home'); }
 
 /* ---------- Start screen ---------- */
 const DIFF_TITLE = { newbie: 'Newbie', easy: 'Easy', medium: 'Medium', hard: 'Hard', expert: 'Expert' };
@@ -1510,6 +1676,7 @@ $('cashout').addEventListener('click', () => { if (!(S.phase === 'idle' || S.pha
 $('practice-end').addEventListener('click', endPractice);
 document.addEventListener('keydown', e => {
   if (e.target.closest('input, textarea') || view() !== 'game' || !$('welcome').hidden) return;
+  if (!$('capture').hidden) { if (e.key === 'Enter' && !$('cap-go').disabled) { e.preventDefault(); $('cap-go').click(); } return; }
   if (e.key === 'Enter') { const b = document.querySelector('#intro.on .go:not([disabled])') || (!$('intro').classList.contains('on') && !$('overlay').classList.contains('on') && document.querySelector('#actions .go')); if (b) { e.preventDefault(); b.click(); } return; }
   if (e.key === ' ') { e.preventDefault(); $('again').click(); return; }
   const n = +e.key;
@@ -1570,6 +1737,14 @@ function showWelcome(keep) {
 const DEV_NAME = 'Milnes D.', DEV_EMAILS = ['milnesda@eht.k12.nj.us'];
 const isDevName = n => /^\s*milnes\s*d\.?\s*$/i.test(String(n || ''));
 async function devSignIn() { const { auth, authMod } = await fbAuth(); return (await authMod.signInWithPopup(auth, new authMod.GoogleAuthProvider())).user.email; }
+// 'no' (not the developer's name), 'yes' (signed in with the developer's Google account) or 'signin' (needs a click to sign in)
+async function devReady(name) {
+  if (!isDevName(name)) return 'no';
+  const { auth } = await fbAuth();
+  if (auth.authStateReady) await auth.authStateReady();
+  const email = String(auth.currentUser && auth.currentUser.email || '').toLowerCase();
+  return DEV_EMAILS.includes(email) ? 'yes' : 'signin';
+}
 async function devPost(name) {
   if (!isDevName(name)) return false;
   const { auth } = await fbAuth();
@@ -1757,13 +1932,24 @@ async function saveRun() {
     const data = { name: displayName(p), score: Math.max(0, Math.round(r.score)), hands: r.hands, acc: r.acc, town: r.town, outlaws: r.outlaws, busted: r.busted, diff: r.diff, clef: r.clef, created_at: fs.serverTimestamp() };
     if (p.classCode) data.class_code = p.classCode;
     if (iconOf(p)) data.icon = iconOf(p);
-    if (await devPost(data.name)) { data.dev = true; data.name = DEV_NAME; }
+    const dv = await devReady(data.name);
+    if (dv === 'signin') {
+      // browsers block a Google pop-up that isn't opened by a click, so ask for one
+      if (el()) {
+        el().className = 'save'; el().innerHTML = 'To post as Milnes D., sign in with your Google account. <button type="button" id="dev-signin">Sign in with Google</button>';
+        $('dev-signin').onclick = async () => { try { await devSignIn(); saveRun(); } catch (e) { el().className = 'save err'; el().textContent = `Google sign-in didn't finish (${e && e.code || 'cancelled'}).`; } };
+      }
+      saving = false; return;
+    }
+    if (dv === 'yes') { data.dev = true; data.name = DEV_NAME; }
     const ref = await wait(fs.addDoc(fs.collection(db, SCORES), data));
     savedRunId = ref.id;
     boardCache.clear();
     if (el()) { el().className = 'save ok'; el().innerHTML = `Posted as ${esc(displayName(p))}${p.classCode ? ' to ' + esc(p.className) + ' and the World board' : ' to the World board'}. <button type="button" data-act="board">See where you rank</button>`; }
-  } catch {
-    if (el()) { el().className = 'save err'; el().innerHTML = "Couldn't post your score. Check your internet connection. <button type=\"button\" id=\"retry-save\">Try again</button>"; const b = $('retry-save'); if (b) b.onclick = saveRun; }
+  } catch (e) {
+    console.warn('score not posted', e);
+    const why = e && e.code === 'permission-denied' ? 'The leaderboard turned this score away' : e && e.message === 'timeout' ? 'The leaderboard took too long to answer' : 'Check your internet connection';
+    if (el()) { el().className = 'save err'; el().innerHTML = `Couldn't post your score. ${why} (${esc(e && (e.code || e.message) || 'error')}). <button type="button" id="retry-save">Try again</button>`; const b = $('retry-save'); if (b) b.onclick = saveRun; }
   }
   saving = false;
 }
