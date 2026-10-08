@@ -246,6 +246,10 @@ body:not(.practice) .practice-only { display: none !important; }
 .mcard .wrow { display: grid; grid-template-columns: minmax(0, 1fr) 110px; gap: 10px; }
 .mcard .wsolo { flex-direction: row; align-items: center; gap: 8px; letter-spacing: 0; text-transform: none; font-size: 15px; color: var(--ivory); cursor: pointer; }
 .mcard .wsolo input { width: 18px; height: 18px; accent-color: var(--gold); }
+.linkish { align-self: flex-start; background: none; border: 0; padding: 0; color: var(--gold); font-weight: 700; font-size: 14px; }
+.linkish:hover:not(:disabled) { text-decoration: underline; border: 0; }
+.wextra { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: end; }
+.wextra button { padding: 9px 12px; }
 .werr { color: #ff8a7a; min-height: 1.3em; margin: 0; }
 .wnote { font-size: 13px; color: var(--haze); margin: 0; }
 .icon-pick { display: flex; flex-direction: column; gap: 6px; }
@@ -567,6 +571,8 @@ button.big:not(:disabled) { animation: rise .5s 1.5s both, glow 1.4s 2s ease-in-
     </div>
     <div class="icon-pick" id="icon-pick"><span class="ip-l">Pick your icon</span><div class="ip-g" id="icon-grid" role="group" aria-label="Your icon"></div></div>
     <label for="w-code">Class code<input type="text" id="w-code" maxlength="7" autocapitalize="characters" spellcheck="false" placeholder="From your teacher"></label>
+    <div id="w-more"></div>
+    <button type="button" class="linkish" id="w-add">+ Add another class</button>
     <label class="wsolo" for="w-solo"><input type="checkbox" id="w-solo"> I'm not in a class (World leaderboard only)</label>
     <p class="werr" id="w-error" role="alert"></p>
     <button class="go big" id="w-go" type="submit">Pull up a chair</button>
@@ -1572,7 +1578,7 @@ function syncSaveLine() {
   if (!p) { el.className = 'save'; el.innerHTML = isGuest() ? "Guest run: this score isn't saved. <button type=\"button\" data-act=\"signin\">Sign in for next time</button>" : 'Sign in to save your scores. <button type="button" data-act="signin">Sign in</button>'; return; }
   if (!lastRun.hands) { el.className = 'save'; el.textContent = 'No hands were played, so nothing was posted.'; return; }
   if (lastRun.wasGuest) { el.className = 'save'; el.textContent = `Signed in as ${displayName(p)}. That was a guest run, so it wasn't saved; your next run posts automatically.`; return; }
-  el.className = 'save'; el.textContent = `Posting as ${displayName(p)}${p.classCode ? ' to ' + p.className + ' and the World board' : ' to the World board'}…`;
+  el.className = 'save'; el.textContent = `Posting as ${displayName(p)}${p.classCode ? ' to ' + classNames(p) + ' and the World board' : ' to the World board'}…`;
 }
 function startRun() {
   Object.assign(S, { town: 0, bank: 100, best: 100, streak: 0, stats: freshStats(), handNo: 0, noon: null });
@@ -1755,6 +1761,16 @@ function setProfile(p) { try { localStorage.setItem(PROFILE_KEY, JSON.stringify(
 const displayName = p => `${p.first.charAt(0).toUpperCase()}${p.first.slice(1)} ${p.init}.`;
 const cleanCode = v => String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 const sidOf = p => (p.first + p.init).toLowerCase().replace(/[^a-z]/g, '');
+// Every class this student is in, main class first (max 3); [] when not in a class.
+function classesOf(p) {
+  if (!p) return [];
+  const list = Array.isArray(p.classes) && p.classes.length ? p.classes
+    : (p.classCode ? [{ code: p.classCode, name: p.className || p.classCode, owner: p.classOwner || '' }] : []);
+  return list.filter(c => c && c.code).slice(0, 3);
+}
+const classNames = p => classesOf(p).map(c => c.name || c.code).join(' · ');
+// the saved student with a new class list (the main class fields always match the first class)
+const withClasses = (p, list) => ({ ...p, classes: list, classCode: list[0] ? list[0].code : '', className: list[0] ? list[0].name : '', classOwner: list[0] ? list[0].owner : '' });
 // player icons, shared by every game (must match iconOk() in firestore.rules)
 const ICONS = ['🎹','🎸','🎺','🪊','🎷','🥁','🎻','🪕','🎤','🎧','🎼','𝄢','🎵','🪘','🪗','⭐','🔥','🚀'];
 const ICON_SVG = {
@@ -1769,13 +1785,14 @@ function setPickedIcon(ic) { $('icon-pick').dataset.icon = ic || ''; $('icon-gri
 const pickedIcon = () => ICONS.includes($('icon-pick').dataset.icon) ? $('icon-pick').dataset.icon : ICONS[Math.floor(Math.random() * ICONS.length)];
 function updateWho() {
   const p = getProfile();
-  $('who-btn').innerHTML = p ? `${iconHTML(iconOf(p)) || '👤'} ${esc(displayName(p))}${p.classCode ? ' · ' + esc(p.className) : ''}` : isGuest() ? '👤 Guest (sign in)' : '👤 Sign in';
+  $('who-btn').innerHTML = p ? `${iconHTML(iconOf(p)) || '👤'} ${esc(displayName(p))}${p.classCode ? ' · ' + esc(classNames(p)) : ''}` : isGuest() ? '👤 Guest (sign in)' : '👤 Sign in';
 }
 function showWelcome(keep) {
   const p = keep ? getProfile() : null;
   setPickedIcon(p && p.icon);
   $('w-first').value = p ? p.first : ''; $('w-init').value = p ? p.init : ''; $('w-code').value = p ? p.classCode || '' : '';
   $('w-solo').checked = !!(p && !p.classCode); $('w-code').disabled = $('w-solo').checked; $('w-error').textContent = '';
+  $('w-more').innerHTML = ''; classesOf(p).slice(1).forEach(c => addClassBox(c.code)); syncAddBtn();
   $('welcome').hidden = false;
   setTimeout(() => $('w-first').focus(), 50);
 }
@@ -1804,36 +1821,55 @@ $('w-form').addEventListener('submit', async e => {
   e.preventDefault();
   const first = $('w-first').value.trim().replace(/\s+/g, ' '), init = $('w-init').value.trim().toUpperCase();
   const solo = $('w-solo').checked, code = cleanCode($('w-code').value), err = $('w-error');
+  const extras = [...$('w-more').querySelectorAll('input')].map(i => cleanCode(i.value)).filter(c => c && c !== code);
   err.textContent = '';
   if (!/^[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ' -]{0,14}$/.test(first)) { err.textContent = 'Enter your first name (letters only).'; $('w-first').focus(); return; }
   if (!/^[A-Z]$/.test(init)) { err.textContent = 'Enter the first letter of your last name.'; $('w-init').focus(); return; }
   if (isDevName(first + ' ' + init)) { try { await devPost(first + ' ' + init); } catch { err.textContent = 'That name is reserved. Use your own first name and last initial.'; return; } }
-  let className = '', classOwner = '';
+  const classes = [];
   if (!solo) {
     if (!code) { err.textContent = 'Enter the class code from your teacher, or check "I\'m not in a class."'; $('w-code').focus(); return; }
     $('w-go').disabled = true; $('w-go').textContent = 'Checking…';
     try {
-      const { fs, db } = await fb(), d = await wait(fs.getDoc(fs.doc(db, 'classes', code)));
-      if (!d.exists()) { err.textContent = "We couldn't find that class code. Check it with your teacher."; $('w-code').focus(); return; }
-      className = d.data().name; classOwner = d.data().ownerEmail || '';
+      const { fs, db } = await fb();
+      for (const c of [...new Set([code, ...extras])].slice(0, 3)) {
+        const d = await wait(fs.getDoc(fs.doc(db, 'classes', c)));
+        if (!d.exists()) { err.textContent = `We couldn't find the class code ${c}. Check it with your teacher.`; return; }
+        classes.push({ code: c, name: d.data().name, owner: d.data().ownerEmail || '' });
+      }
     } catch { err.textContent = "Couldn't check the code. Check your internet connection and try again."; return; }
     finally { $('w-go').disabled = false; $('w-go').textContent = 'Pull up a chair'; }
   }
-  setProfile({ first, init, classCode: solo ? '' : code, className, classOwner, icon: pickedIcon() });
+  setProfile(withClasses({ first, init, icon: pickedIcon() }, classes));
   $('welcome').hidden = true; afterWho();
 });
-$('w-solo').addEventListener('change', e => { $('w-code').disabled = e.target.checked; if (e.target.checked) $('w-code').value = ''; });
-$('w-code').addEventListener('input', e => { const c = cleanCode(e.target.value); if (c !== e.target.value) e.target.value = c; });
+$('w-solo').addEventListener('change', e => { $('w-code').disabled = e.target.checked; if (e.target.checked) { $('w-code').value = ''; $('w-more').innerHTML = ''; } syncAddBtn(); });
+$('w-form').addEventListener('input', e => { if (e.target.matches('#w-code, #w-more input')) { const c = cleanCode(e.target.value); if (c !== e.target.value) e.target.value = c; } });
+// a student in more than one class adds each code (up to 3 in all)
+function addClassBox(val = '') {
+  const n = $('w-more').children.length + 2;
+  const row = document.createElement('div'); row.className = 'wextra';
+  row.innerHTML = `<label>Class code ${n}<input type="text" maxlength="7" autocapitalize="characters" spellcheck="false" placeholder="Another class"></label><button type="button" aria-label="Remove this class">✕</button>`;
+  row.querySelector('input').value = val;
+  row.querySelector('button').onclick = () => { row.remove(); [...$('w-more').children].forEach((r, i) => { r.querySelector('label').firstChild.textContent = `Class code ${i + 2}`; }); syncAddBtn(); };
+  $('w-more').appendChild(row); syncAddBtn();
+  return row.querySelector('input');
+}
+function syncAddBtn() { $('w-add').hidden = $('w-solo').checked || $('w-more').children.length >= 2; }
+$('w-add').addEventListener('click', () => addClassBox().focus());
 $('w-guest').addEventListener('click', () => { try { sessionStorage.setItem(GUEST_KEY, '1'); } catch {} $('welcome').hidden = true; afterWho(); });
 $('welcome').addEventListener('click', e => { if (e.target === $('welcome')) $('welcome').hidden = true; });
 function afterWho() { updateWho(); loadPosters(); drawPosters(); syncSaveLine(); pullPosters(); }
+// keep every class's name fresh; a deleted class drops off (the next one becomes the main class)
 async function refreshClass() {
-  const p = getProfile(); if (!p || !p.classCode) return;
+  const p = getProfile(), list = classesOf(p); if (!list.length) return;
   try {
-    const { fs, db } = await fb(), d = await wait(fs.getDoc(fs.doc(db, 'classes', p.classCode)));
-    setProfile(d.exists() ? { ...p, className: d.data().name, classOwner: d.data().ownerEmail || '' } : { ...p, classCode: '', className: '', classOwner: '' });
+    const { fs, db } = await fb(), docs = await Promise.all(list.map(c => wait(fs.getDoc(fs.doc(db, 'classes', c.code)))));
+    const keep = list.map((c, i) => docs[i].exists() ? { code: c.code, name: docs[i].data().name, owner: docs[i].data().ownerEmail || '' } : null).filter(Boolean);
+    const mainGone = keep[0]?.code !== p.classCode;
+    setProfile(withClasses(p, keep));
     updateWho();
-    if (!d.exists()) pullPosters();
+    if (mainGone) pullPosters();
   } catch {}
 }
 // a sign-in made in another game's tab shows up here too
@@ -1960,7 +1996,7 @@ async function devRows(fs, db, extra = []) {
   try { return (await fs.getDocs(fs.query(fs.collection(db, SCORES), fs.where('dev', '==', true), ...extra))).docs; } catch { return []; }
 }
 async function fetchRows(scope, diff) {
-  const { fs, db } = await fb(), p = getProfile(), col = fs.collection(db, SCORES), cls = scope === 'class' && p && p.classCode ? p.classCode : '';
+  const { fs, db } = await fb(), col = fs.collection(db, SCORES), cls = scope !== 'world' ? scope : '';
   const key = [cls ? 'class' : 'world', cls, diff].join('|'), hit = boardCache.get(key);
   if (hit && Date.now() - hit.t < BOARD_TTL) return hit;
   const eq = [...(cls ? [fs.where('class_code', '==', cls)] : []), ...(diff !== 'all' ? [fs.where('diff', '==', diff)] : [])];
@@ -1968,20 +2004,27 @@ async function fetchRows(scope, diff) {
   const old = () => get(cls ? fs.query(col, fs.where('class_code', '==', cls)) : fs.query(col, fs.orderBy('score', 'desc'), fs.limit(400)));
   let rows = eq.length ? await indexed('board' + (cls ? '+class' : '') + (diff !== 'all' ? '+diff' : ''), () => get(fs.query(col, ...eq, fs.orderBy('score', 'desc'), fs.limit(BOARD_N))), old)
                       : await get(fs.query(col, fs.orderBy('score', 'desc'), fs.limit(BOARD_N)));
-  if (cls) { const seen = new Set(rows.map(r => r.id)); rows = rows.concat((await devRows(fs, db, diff !== 'all' ? [fs.where('diff', '==', diff)] : [])).map(toRow).filter(r => !seen.has(r.id))); }
+  if (cls) {
+    // students in several classes are tagged with every class; and the developer's runs show on every class board
+    const seen = new Set(rows.map(r => r.id));
+    const more = (await get(fs.query(col, fs.where('class_codes', 'array-contains', cls)))).filter(r => diff === 'all' || r.diff === diff);
+    const dev = (await devRows(fs, db, diff !== 'all' ? [fs.where('diff', '==', diff)] : [])).map(toRow);
+    for (const r of more.concat(dev)) if (!seen.has(r.id)) { seen.add(r.id); rows.push(r); }
+  }
   const e = { rows, t: Date.now() };
   boardCache.set(key, e);
   return e;
 }
 function openBoard(run) {
   const p = getProfile();
-  boardScope = p && p.classCode ? 'class' : 'world';
+  boardScope = p && p.classCode ? p.classCode : 'world';
   if (run) { boardDiff = run.diff; boardClef = run.clef; }
   go('board'); loadBoard();
 }
 function drawBoardControls() {
   const p = getProfile();
-  $('seg-scope').innerHTML = segHTML((p && p.classCode ? [['class', esc(p.className || 'My class')]] : []).concat([['world', 'World']]), boardScope);
+  if (boardScope !== 'world' && !classesOf(p).some(c => c.code === boardScope)) boardScope = 'world';
+  $('seg-scope').innerHTML = segHTML(classesOf(p).map(c => [c.code, esc(c.name || c.code)]).concat([['world', 'World']]), boardScope);
   $('seg-bdiff').innerHTML = segHTML([['all', 'All'], ...Object.entries(DIFF_TITLE)], boardDiff);
   $('seg-bclef').innerHTML = segHTML([['all', 'All'], ['treble', 'Treble'], ['bass', 'Bass'], ['mixed', 'Mixed']], boardClef);
 }
@@ -2030,6 +2073,7 @@ async function saveRun() {
     const { fs, db } = await fb();
     const data = { name: displayName(p), score: Math.max(0, Math.round(r.score)), hands: r.hands, acc: r.acc, town: r.town, outlaws: r.outlaws, busted: r.busted, diff: r.diff, clef: r.clef, created_at: fs.serverTimestamp() };
     if (p.classCode) data.class_code = p.classCode;
+    if (classesOf(p).length > 1) data.class_codes = classesOf(p).map(c => c.code);   // a student in 2–3 classes shows on each class board
     if (iconOf(p)) data.icon = iconOf(p);
     const dv = await devReady(data.name);
     if (dv === 'signin') {
@@ -2044,7 +2088,7 @@ async function saveRun() {
     const ref = await wait(fs.addDoc(fs.collection(db, SCORES), data));
     savedRunId = ref.id;
     boardCache.clear();
-    if (el()) { el().className = 'save ok'; el().innerHTML = `Posted as ${esc(displayName(p))}${p.classCode ? ' to ' + esc(p.className) + ' and the World board' : ' to the World board'}. <button type="button" data-act="board">See where you rank</button>`; }
+    if (el()) { el().className = 'save ok'; el().innerHTML = `Posted as ${esc(displayName(p))}${p.classCode ? ' to ' + esc(classNames(p)) + ' and the World board' : ' to the World board'}. <button type="button" data-act="board">See where you rank</button>`; }
   } catch (e) {
     console.warn('score not posted', e);
     const why = e && e.code === 'permission-denied' ? 'The leaderboard turned this score away' : e && e.message === 'timeout' ? 'The leaderboard took too long to answer' : 'Check your internet connection';
