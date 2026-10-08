@@ -39,6 +39,7 @@ button.twoline small { font-size: 12px; font-weight: 600; color: var(--dust); le
 html, body { margin: 0; background: var(--night); color: var(--ivory); }
 body { font-family: var(--f-ui); font-size: 16px; line-height: 1.45; }
 .wrap { max-width: 1100px; margin: 0 auto; padding: 18px 16px 48px; display: flex; flex-direction: column; gap: 14px; }
+#game { padding-top: 10px; padding-bottom: 8px; gap: 10px; }
 
 header.top { display: flex; flex-wrap: wrap; align-items: end; gap: 12px 26px; }
 .brand { margin-right: auto; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
@@ -368,6 +369,19 @@ button.big:not(:disabled) { animation: rise .5s 1.5s both, glow 1.4s 2s ease-in-
 .ivbtns button small { font-weight: 600; font-size: 12.5px; color: var(--dust); line-height: 1.2; }
 .ivbtns button[aria-pressed="true"] { background: var(--gold); border-color: var(--gold); color: var(--ink); }
 .ivbtns button[aria-pressed="true"] small { color: var(--ink); }
+/* Wide, short screens (classroom displays, laptops): the wall with the trail, town sign and posters
+   becomes a sidebar, so the table can stay big. fitGame() then scales everything to the screen's height. */
+@media (min-width: 1200px) and (min-aspect-ratio: 3/2) {
+  #game { max-width: 1720px; }
+  #game .stage { display: grid; grid-template-columns: 300px minmax(0, 1fr); grid-template-rows: auto auto auto 1fr; }
+  #game .wall { grid-column: 1; grid-row: 1 / span 4; padding: 14px; border-right: 6px solid var(--rail); }
+  #game .room { grid-column: 2; grid-row: 1; }
+  #game .tray { grid-column: 2; grid-row: 2; }
+  #game .piano { grid-column: 2; grid-row: 3; }
+  #game .wallrow { flex-direction: column; align-items: stretch; }
+  #game .posters { flex-wrap: wrap; overflow: visible; justify-content: center; gap: 10px 8px; padding-top: 4px; }
+  #game .poster { width: 80px; }
+}
 @media (max-width: 640px) {
   .hankstage { grid-template-columns: 1fr; justify-items: center; }
   .hank { width: 190px; }
@@ -459,6 +473,7 @@ button.big:not(:disabled) { animation: rise .5s 1.5s both, glow 1.4s 2s ease-in-
       <button type="button" id="songbook-btn" class="twoline"><span>🎹 Hank's Songbook</span><small>Learn the intervals</small></button>
       <button type="button" id="cashout" class="twoline trail-only"><span>💰 Cash out</span><small id="cashout-amt">$100</small></button>
       <button type="button" id="practice-end" class="practice-only">End practice</button>
+      <button type="button" id="fs-btn" data-tip="Fill the whole screen (great on a classroom display). Press Esc to leave.">⛶ Full screen</button>
     </div>
   </header>
 
@@ -1576,8 +1591,29 @@ function go(v) {
   VIEWS.forEach(x => { $(x).hidden = x !== v; });
   window.scrollTo(0, 0); hideTip();
   if (v === 'home') { drawPosters(); updateWho(); pullPosters(); }
+  if (v === 'game') refit();
 }
 function goHome() { stopClock(); S.tok++; S.phase = 'idle'; $('capture').hidden = true; $('overlay').classList.remove('on'); $('intro').classList.remove('on'); if (S.stingBus) { S.stingBus.disconnect(); S.stingBus = null; } go('home'); }
+
+/* ---------- Fit the table to the screen (classroom displays are wide and short) ---------- */
+// The whole table is scaled down until it fits the window's height, so nobody has to scroll mid-hand.
+function fitGame() {
+  const g = $('game'); if (g.hidden) return;
+  g.style.zoom = 1;
+  if (window.innerWidth < 700) return; // phones scroll instead; shrinking would make the cards too small to tap
+  const natural = g.getBoundingClientRect().height;
+  const z = Math.max(.5, Math.min(1, (window.innerHeight - 4) / natural));
+  g.style.zoom = z < .995 ? z.toFixed(3) : 1;
+}
+let fitT = null;
+const refit = () => { clearTimeout(fitT); fitT = setTimeout(fitGame, 30); };
+addEventListener('resize', refit);
+if (window.ResizeObserver) new ResizeObserver(refit).observe(document.querySelector('#game .stage'));
+$('fs-btn').addEventListener('click', () => {
+  if (document.fullscreenElement) document.exitFullscreen?.();
+  else document.documentElement.requestFullscreen?.().catch(() => toast('This browser won\'t go full screen. Try F11.'));
+});
+document.addEventListener('fullscreenchange', () => { $('fs-btn').textContent = document.fullscreenElement ? '⛶ Exit full screen' : '⛶ Full screen'; refit(); });
 
 /* ---------- Start screen ---------- */
 const DIFF_TITLE = { newbie: 'Newbie', easy: 'Easy', medium: 'Medium', hard: 'Hard', expert: 'Expert' };
