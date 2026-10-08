@@ -144,10 +144,10 @@ button.red { background: var(--red); border-color: var(--red); }
 .card.wrong .xmark { display: block; }
 .card.hidden { display: none; }
 
-.sl { stroke: #4a3a28; stroke-width: 1; }
-.ledger { stroke: #4a3a28; stroke-width: 1.2; }
+.sl { stroke: #3a2a1a; stroke-width: 1.5; }
+.ledger { stroke: #3a2a1a; stroke-width: 1.8; }
 .clefg, .accg { font-family: var(--f-music); fill: var(--ink); }
-.letters { font-family: var(--f-ui); font-weight: 700; font-size: 7.5px; fill: #3d7a55; }
+.letters { font-family: var(--f-ui); font-weight: 700; font-size: 8.5px; fill: #2d6a45; }
 .dot { fill: #3d7a55; }
 .dotn { font-family: var(--f-ui); font-weight: 700; font-size: 7px; fill: #3d7a55; }
 
@@ -391,6 +391,15 @@ button.big:not(:disabled) { animation: rise .5s 1.5s both, glow 1.4s 2s ease-in-
   #game .wallrow { flex-direction: column; align-items: stretch; }
   #game .posters { flex-wrap: wrap; overflow: visible; justify-content: center; gap: 10px 8px; padding-top: 4px; }
   #game .poster { width: 80px; }
+  /* big cards and text on a wide screen, and less empty felt above and below them */
+  #game .card { width: clamp(150px, 12.5vw, 230px); }
+  #game .card.hole { width: clamp(110px, 8.5vw, 160px); }
+  #game .roundtable { padding: 22px 8% 34px; gap: 8px; }
+  #game .card .nm { font-size: 21px; }
+  #game .card .tag { font-size: 14px; }
+  #game .bubble { font-size: 19px; max-width: 640px; }
+  #game .lbl { font-size: 13px; }
+  #game .actions .hint { font-size: 17px; }
 }
 @media (max-width: 640px) {
   .hankstage { grid-template-columns: 1fr; justify-items: center; }
@@ -1604,19 +1613,23 @@ function go(v) {
   VIEWS.forEach(x => { $(x).hidden = x !== v; });
   window.scrollTo(0, 0); hideTip();
   if (v === 'home') { drawPosters(); updateWho(); pullPosters(); }
-  if (v === 'game') refit();
+  refit();
 }
 function goHome() { stopClock(); S.tok++; S.phase = 'idle'; $('capture').hidden = true; $('overlay').classList.remove('on'); $('intro').classList.remove('on'); if (S.stingBus) { S.stingBus.disconnect(); S.stingBus = null; } go('home'); }
 
 /* ---------- Fit the table to the screen (classroom displays are wide and short) ---------- */
 // The whole table is scaled down until it fits the window's height, so nobody has to scroll mid-hand.
+// Every screen is scaled to the window: the table fills the screen (bigger on big displays like a
+// classroom panel, smaller on short laptops); the other screens grow to the window's width.
 function fitGame() {
-  const g = $('game'); if (g.hidden) return;
+  const v = view(), g = v && $(v); if (!g) return;
   g.style.zoom = 1;
   if (window.innerWidth < 700) return; // phones scroll instead; shrinking would make the cards too small to tap
-  const natural = g.getBoundingClientRect().height;
-  const z = Math.max(.5, Math.min(1, (window.innerHeight - 4) / natural));
-  g.style.zoom = z < .995 ? z.toFixed(3) : 1;
+  const r = g.getBoundingClientRect();
+  const byW = (window.innerWidth - 8) / r.width;
+  const z = v === 'game' ? Math.max(.5, Math.min(2.5, byW, (window.innerHeight - 4) / r.height))
+    : window.innerWidth > 2000 ? Math.min(2.2, window.innerWidth / 1500) : 1;   // only very large screens enlarge the other pages
+  g.style.zoom = Math.abs(z - 1) > .01 ? z.toFixed(3) : 1;
 }
 let fitT = null;
 const refit = () => { clearTimeout(fitT); fitT = setTimeout(fitGame, 30); };
