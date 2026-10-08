@@ -1,0 +1,1807 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Earshot Saloon</title>
+<meta name="description" content="An ear-training card game for intervals: hear two notes, find the second one on the staff, and lasso the Interval Outlaws.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rye&family=Barlow+Semi+Condensed:wght@500;600;700&family=Noto+Music&display=swap">
+<style>
+/* Earshot Saloon: a start screen (difficulty, clef, mode, posters), the saloon table (scoreboard, plank wall with the trail and Wanted posters, the dealer, a round green-felt table, replay and hint buttons, the piano strip), Hank's Songbook and the leaderboard. A single warm lamp-lit look, by choice. */
+:root {
+  --night: #1a120c;
+  --wood: #3a2616;
+  --wood2: #4a301c;
+  --plank: #2c1c10;
+  --rail: #5a3a1e;
+  --felt: #1f5a3a;
+  --felt2: #164530;
+  --ivory: #f4ead2;
+  --ink: #2a1d12;
+  --paper: #e9d7aa;
+  --dust: #c9b48a;
+  --haze: #a8977a;
+  --gold: #e6b84c;
+  --red: #b8322a;
+  --win: #4fc97a;
+  --sky: #5ab8e6;
+  --f-display: "Rye", "Georgia", serif;
+  --f-ui: "Barlow Semi Condensed", "Arial Narrow", ui-sans-serif, system-ui, sans-serif;
+  --f-music: "Noto Music", "Bravura Text", "Apple Symbols", serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+button.twoline { display: inline-flex; flex-direction: column; align-items: center; gap: 0; line-height: 1.15; padding: 6px 14px; }
+button.twoline small { font-size: 12px; font-weight: 600; color: var(--dust); letter-spacing: .02em; }
+html, body { margin: 0; background: var(--night); color: var(--ivory); }
+body { font-family: var(--f-ui); font-size: 16px; line-height: 1.45; }
+.wrap { max-width: 1100px; margin: 0 auto; padding: 18px 16px 48px; display: flex; flex-direction: column; gap: 14px; }
+
+header.top { display: flex; flex-wrap: wrap; align-items: end; gap: 12px 26px; }
+.brand { margin-right: auto; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.eyebrow { font-size: 13px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--gold); }
+h1 { font-family: var(--f-display); font-weight: 400; font-size: clamp(30px, 6vw, 46px); line-height: 1; margin: 0; color: var(--ivory); text-shadow: 0 2px 0 #000, 0 0 18px rgba(230,184,76,.35); }
+.hud { display: flex; flex-wrap: wrap; gap: 8px 22px; align-items: end; }
+.stat { display: flex; flex-direction: column; }
+.stat .k { font-size: 12px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--haze); }
+.stat .v { font-family: var(--f-display); font-size: 23px; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.v.money { color: var(--gold); }
+.v.mult { color: var(--sky); }
+
+button { font: inherit; font-weight: 700; font-size: 15px; letter-spacing: .03em; color: var(--ivory); background: var(--wood2); border: 1px solid var(--rail); border-radius: 10px; padding: 8px 14px; cursor: pointer; }
+button:hover:not(:disabled) { border-color: var(--gold); }
+button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+button:disabled { opacity: .45; cursor: default; }
+button.go { background: var(--gold); border-color: var(--gold); color: var(--ink); }
+button.go:hover:not(:disabled) { border-color: var(--ivory); }
+button.red { background: var(--red); border-color: var(--red); }
+
+.stage { border: 1px solid var(--rail); border-radius: 16px; overflow: hidden; background: var(--plank); }
+
+/* The wall */
+.wall { position: relative; padding: 12px 14px 0; background:
+  repeating-linear-gradient(90deg, rgba(0,0,0,.28) 0 2px, transparent 2px 64px),
+  linear-gradient(180deg, var(--wood2), var(--wood)); }
+.wallrow { display: flex; gap: 12px; align-items: flex-start; }
+.townsign { flex: none; background: #6b4423; border: 3px solid #2a170a; border-radius: 6px; padding: 6px 12px 4px; text-align: center; box-shadow: 0 4px 0 rgba(0,0,0,.4); }
+.townsign b { display: block; font-family: var(--f-display); font-weight: 400; font-size: 18px; color: var(--paper); line-height: 1.1; }
+.townsign span { font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--dust); }
+.posters { flex: 1; display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: thin; }
+.poster { flex: none; width: 66px; position: relative; background: var(--paper); color: var(--ink); border-radius: 2px; padding: 3px 3px 4px; text-align: center; box-shadow: 0 3px 6px rgba(0,0,0,.45); transform: rotate(var(--tilt, 0deg)); }
+.poster .w { font-family: var(--f-display); font-size: 10px; letter-spacing: .06em; line-height: 1; }
+.poster svg { display: block; width: 100%; height: auto; }
+.poster .n { font-size: 10px; font-weight: 700; line-height: 1.05; min-height: 2.1em; }
+.poster .i { font-size: 9.5px; font-weight: 600; color: #6b5a3e; }
+.poster.off { opacity: .28; filter: grayscale(1); }
+.poster.unknown svg { filter: grayscale(1) brightness(.6) blur(1.5px); }
+.poster .stamp { position: absolute; left: 50%; top: 44%; transform: translate(-50%, -50%) rotate(-18deg); border: 2px solid var(--red); color: var(--red); font-family: var(--f-display); font-size: 9px; padding: 1px 3px; background: rgba(233,215,170,.7); display: none; }
+.poster.caught .stamp { display: block; }
+.poster .star { position: absolute; top: -6px; right: -6px; font-size: 15px; display: none; }
+.poster.caught .star { display: block; }
+
+.barrow { display: grid; grid-template-columns: 1fr auto 1fr; grid-template-areas: "clock dealer bubble"; align-items: end; gap: 14px; margin-top: 6px; }
+.dealer { grid-area: dealer; width: 180px; height: auto; display: block; }
+.bubble { grid-area: bubble; justify-self: start; margin-bottom: 30px; position: relative; align-self: center; background: var(--ivory); color: var(--ink); border-radius: 14px; padding: 9px 13px; font-size: 16px; font-weight: 600; max-width: 560px; box-shadow: 0 3px 0 rgba(0,0,0,.35); }
+.bubble::before { content: ""; position: absolute; left: -9px; bottom: 16px; border: 9px solid transparent; border-right-color: var(--ivory); border-left: 0; }
+.bubble b { color: var(--red); }
+.bubble .who { display: block; font-size: 11px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: #7a6544; }
+.clock { grid-area: clock; justify-self: end; margin-bottom: 30px; align-self: center; display: none; flex-direction: column; align-items: center; gap: 2px; padding: 6px 10px; border-radius: 12px; background: #2a170a; border: 2px solid var(--gold); }
+.clock.on { display: flex; }
+.clock b { font-family: var(--f-display); font-size: 26px; color: var(--gold); line-height: 1; font-variant-numeric: tabular-nums; }
+.clock span { font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--dust); }
+.clock.hot b { color: #ff7a5a; }
+
+/* The round table: the dealer sits behind it, his card on his side, the flop in the middle */
+.room { padding: 0 14px 22px; background: linear-gradient(180deg, var(--wood) 0 62%, #24170c 62%); }
+.roundtable { position: relative; z-index: 1; margin: -30px auto 0; max-width: 1000px; border-radius: 50%; border: 18px solid var(--rail);
+  background: radial-gradient(ellipse at 50% 42%, var(--felt), var(--felt2) 72%);
+  box-shadow: inset 0 0 0 3px rgba(230,184,76,.35), inset 0 12px 34px rgba(0,0,0,.5), 0 0 0 3px #2a170a, 0 16px 34px rgba(0,0,0,.6);
+  padding: 30px 11% 56px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.holeWrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.lbl { font-size: 12px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: #cfe6d6; opacity: .85; text-align: center; }
+.cards { display: flex; gap: 12px; justify-content: center; }
+.timetrack { width: min(360px, 70%); height: 5px; border-radius: 3px; overflow: hidden; }
+.timebar { height: 100%; width: 0; background: var(--gold); }
+
+.card { width: clamp(128px, 16vw, 168px); aspect-ratio: 5 / 7; perspective: 800px; position: relative; border: 0; padding: 0; background: none; border-radius: 10px; }
+.card .inner { position: absolute; inset: 0; transition: transform .45s cubic-bezier(.3,.7,.4,1); transform-style: preserve-3d; }
+.card.down .inner { transform: rotateY(180deg); }
+.card .face, .card .back { position: absolute; inset: 0; border-radius: 10px; backface-visibility: hidden; -webkit-backface-visibility: hidden; box-shadow: 0 4px 10px rgba(0,0,0,.45); }
+.card .face { background: var(--ivory); color: var(--ink); display: flex; flex-direction: column; align-items: stretch; justify-content: center; padding: 8px 6px; border: 2px solid #d9c9a3; }
+.card .back { transform: rotateY(180deg); border: 4px solid var(--ivory); background:
+  repeating-linear-gradient(45deg, rgba(230,184,76,.45) 0 2px, transparent 2px 10px),
+  repeating-linear-gradient(-45deg, rgba(230,184,76,.45) 0 2px, transparent 2px 10px), var(--red); display: grid; place-items: center; }
+.card .back span { font-family: var(--f-display); font-size: 30px; color: var(--gold); background: var(--red); border: 2px solid var(--gold); border-radius: 50%; width: 52px; height: 52px; display: grid; place-items: center; }
+.card.pickable { cursor: pointer; }
+.card.pickable:hover .face { border-color: var(--gold); transform: translateY(-3px); }
+.card .face { transition: transform .15s, border-color .15s; }
+.card.right .face { border-color: var(--win); box-shadow: 0 0 0 3px var(--win), 0 0 22px rgba(79,201,122,.7); }
+.card.picked.right .face { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold), 0 0 26px rgba(230,184,76,.85); }
+.card.pop { z-index: 3; animation: winpop .5s cubic-bezier(.3,1.6,.5,1) forwards; }
+@keyframes winpop { 0% { transform: scale(1); } 60% { transform: scale(1.22) translateY(-8px); } 100% { transform: scale(1.14) translateY(-6px); } }
+.flychip { position: fixed; z-index: 20; width: 24px; height: 24px; border-radius: 50%; pointer-events: none; background: var(--c); border: 4px dashed #f4ead2; box-shadow: 0 2px 4px rgba(0,0,0,.5), inset 0 0 0 2px var(--c); }
+.v.money.bump { animation: bankbump .5s; }
+@keyframes bankbump { 40% { transform: scale(1.3); color: #fff3c4; } }
+.card.wrong .face { border-color: var(--red); box-shadow: 0 0 0 3px var(--red); }
+.card.hole { width: clamp(92px, 11vw, 120px); }
+.card.hole .face { border-color: var(--gold); padding: 5px 4px; }
+.card.hole .nm { font-size: 14px; }
+.card.hole .tag { font-size: 10.5px; min-height: 0; }
+.card .corner { position: absolute; top: 5px; left: 7px; font-family: var(--f-display); font-size: 14px; line-height: 1; color: #a8977a; }
+.card .corner.red { color: var(--red); }
+.card .corner.blk { color: var(--ink); }
+.card .key { position: absolute; top: 5px; right: 8px; font-size: 12px; font-weight: 700; color: #a8977a; }
+.card svg.staff { width: 100%; height: auto; display: block; }
+.card .nm { text-align: center; font-weight: 700; font-size: 17px; min-height: 1.3em; font-family: var(--f-ui); }
+.card .nm .acc { font-family: var(--f-music); font-weight: 400; }
+.card .tag { text-align: center; font-size: 12.5px; font-weight: 700; line-height: 1.15; min-height: 2.3em; color: #6b5a3e; }
+.card .ear { position: absolute; bottom: 6px; right: 6px; font-size: 15px; padding: 3px 7px; border-radius: 8px; background: #e2d3ad; border-color: #c9b48a; color: var(--ink); }
+.card .xmark { position: absolute; top: 4px; right: 6px; font-family: var(--f-display); color: var(--red); font-size: 20px; display: none; }
+.card.wrong .xmark { display: block; }
+.card.hidden { display: none; }
+
+.sl { stroke: #4a3a28; stroke-width: 1; }
+.ledger { stroke: #4a3a28; stroke-width: 1.2; }
+.clefg, .accg { font-family: var(--f-music); fill: var(--ink); }
+.letters { font-family: var(--f-ui); font-weight: 700; font-size: 7.5px; fill: #3d7a55; }
+.dot { fill: #3d7a55; }
+.dotn { font-family: var(--f-ui); font-weight: 700; font-size: 7px; fill: #3d7a55; }
+
+.actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center; margin-top: 4px; min-height: 44px; max-width: 560px; }
+.actions .hint { width: 100%; text-align: center; color: #cfe6d6; font-size: 15px; }
+.bet { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; min-width: 76px; }
+.chips { display: inline-flex; gap: 2px; }
+.chip { width: 18px; height: 18px; border-radius: 50%; background: var(--red); border: 3px dashed var(--ivory); display: inline-block; }
+.bet small { font-weight: 600; font-size: 12px; opacity: .85; }
+
+/* Tray */
+.tray { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; padding: 12px 14px; background: #24170c; border-top: 1px solid var(--rail); }
+.tray .k { font-size: 12px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--haze); margin-right: 4px; }
+.trayR { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+.piano { padding: 8px 14px 12px; background: #24170c; border-top: 1px solid var(--rail); display: none; }
+.piano.on { display: block; }
+.piano svg { width: 100%; height: 104px; display: block; touch-action: manipulation; }
+.piano .pk { cursor: pointer; }
+.piano .pk:hover { opacity: .85; }
+.ptip { text-align: center; font-size: 14px; font-weight: 600; color: var(--dust); margin-bottom: 6px; }
+.card.match .face { box-shadow: 0 0 0 3px #e98a3c, 0 0 18px rgba(233,138,60,.8); animation: matchfade 1.2s forwards; }
+@keyframes matchfade { 70% { box-shadow: 0 0 0 3px #e98a3c, 0 0 18px rgba(233,138,60,.8); } 100% { box-shadow: 0 4px 10px rgba(0,0,0,.45); } }
+
+.toast { position: fixed; left: 50%; top: 18px; transform: translateX(-50%) translateY(calc(-100% - 40px)); background: var(--gold); color: var(--ink); font-family: var(--f-display); font-size: 20px; padding: 10px 20px; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,.5); transition: transform .3s; z-index: 10; text-align: center; max-width: calc(100% - 32px); }
+.toast.on { transform: translateX(-50%) translateY(0); }
+
+/* Controls + notes */
+.panel { border: 1px solid var(--rail); border-radius: 14px; background: #24170c; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.row .rk { font-size: 12px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--haze); min-width: 92px; }
+.seg { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.seg button { padding: 6px 12px; font-size: 14px; border-radius: 999px; background: var(--plank); }
+.seg button[aria-pressed="true"] { background: var(--gold); border-color: var(--gold); color: var(--ink); }
+.helpers label { display: inline-flex; gap: 6px; align-items: center; font-weight: 600; font-size: 15px; margin-right: 12px; cursor: pointer; }
+.helpers input { accent-color: var(--gold); width: 17px; height: 17px; }
+.notes h2 { font-family: var(--f-display); font-weight: 400; font-size: 22px; margin: 0; color: var(--gold); }
+.notes ul { margin: 0; padding-left: 20px; color: var(--dust); }
+.notes li { margin: 4px 0; }
+.notes b { color: var(--ivory); }
+
+/* Start screen, leaderboard, sign-in */
+.home-top { align-items: center; }
+.tagline { margin: 6px 0 0; color: var(--dust); font-size: 18px; }
+.topbtns { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+a.btnlink { font-weight: 700; font-size: 15px; color: var(--ivory); background: var(--wood2); border: 1px solid var(--rail); border-radius: 10px; padding: 8px 14px; text-decoration: none; }
+a.btnlink:hover { border-color: var(--gold); }
+.panel h2.ph { font-family: var(--f-display); font-weight: 400; font-size: 22px; margin: 0; color: var(--gold); }
+.diffs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.diffs button { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left; padding: 10px 12px; min-height: 92px; background: var(--plank); }
+.diffs button b { font-family: var(--f-display); font-weight: 400; font-size: 20px; color: var(--ivory); }
+.diffs button small { font-weight: 600; font-size: 13px; line-height: 1.3; color: var(--dust); }
+.diffs button[aria-pressed="true"] { border-color: var(--gold); background: color-mix(in srgb, var(--gold) 14%, var(--plank)); box-shadow: inset 0 0 0 1px var(--gold); }
+.diffs button[aria-pressed="true"] b { color: var(--gold); }
+.startrow { gap: 10px; margin-top: 4px; }
+.startrow .go.big { animation: none; }
+.ivpick { display: flex; flex-wrap: wrap; gap: 6px; }
+.ivpick label { display: inline-flex; gap: 6px; align-items: center; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--rail); background: var(--plank); font-weight: 600; font-size: 14px; cursor: pointer; }
+.ivpick input { accent-color: var(--gold); }
+.ivpick label:has(input:checked) { border-color: var(--gold); color: var(--gold); }
+.posters.wall-big { flex-wrap: wrap; overflow: visible; }
+.posters.wall-big .poster { width: 84px; }
+.howto ol { margin: 0; padding-left: 22px; color: var(--dust); }
+.howto li { margin: 5px 0; }
+.howto b { color: var(--ivory); }
+.muted { color: var(--dust); margin: 0; }
+body.practice .trail-only { display: none !important; }
+body:not(.practice) .practice-only { display: none !important; }
+.who-pill { font-weight: 700; }
+
+.board-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.board-list li { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding: 10px 14px; border-radius: 10px; background: var(--plank); border: 1px solid var(--rail); }
+.board-list li.r1 { border-color: var(--gold); }
+.board-list li.mine { box-shadow: 0 0 0 2px var(--sky); }
+.board-list .rank { font-family: var(--f-display); font-size: 22px; color: var(--gold); text-align: center; }
+.board-list .nm { font-weight: 700; font-size: 17px; }
+.board-list .tags { display: block; font-size: 13px; color: var(--dust); }
+.board-list .detail { font-size: 13.5px; color: var(--haze); text-align: right; }
+.board-list .score { font-family: var(--f-display); font-size: 22px; color: var(--gold); min-width: 90px; text-align: right; }
+.devtag { font-size: 11px; font-weight: 700; color: var(--ink); background: var(--sky); border-radius: 4px; padding: 0 4px; }
+.board-empty { color: var(--dust); text-align: center; padding: 18px; }
+.board-empty b { display: block; color: var(--ivory); font-size: 18px; }
+@media (max-width: 640px) {
+  .diffs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .board-list li { grid-template-columns: 32px minmax(0, 1fr) auto; }
+  .board-list .detail { display: none; }
+}
+
+.modal { position: fixed; inset: 0; z-index: 25; display: grid; place-items: center; padding: 16px; background: rgba(8,4,2,.85); }
+.modal[hidden] { display: none !important; }
+.mcard { width: min(480px, 100%); max-height: calc(100vh - 32px); overflow: auto; padding: 20px 22px; border-radius: 14px; border: 3px solid var(--gold); background: linear-gradient(180deg, var(--wood2), var(--wood)); display: flex; flex-direction: column; gap: 10px; }
+.mcard h2 { font-family: var(--f-display); font-weight: 400; font-size: 32px; margin: 0; color: var(--gold); }
+.mcard label { display: flex; flex-direction: column; gap: 5px; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--dust); }
+.mcard input[type="text"] { font: 600 17px var(--f-ui); color: var(--ivory); background: var(--night); border: 1px solid var(--rail); border-radius: 10px; padding: 10px 12px; }
+.mcard input[type="text"]:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
+.mcard input:disabled { opacity: .4; }
+.mcard .wrow { display: grid; grid-template-columns: minmax(0, 1fr) 110px; gap: 10px; }
+.mcard .wsolo { flex-direction: row; align-items: center; gap: 8px; letter-spacing: 0; text-transform: none; font-size: 15px; color: var(--ivory); cursor: pointer; }
+.mcard .wsolo input { width: 18px; height: 18px; accent-color: var(--gold); }
+.werr { color: #ff8a7a; min-height: 1.3em; margin: 0; }
+.wnote { font-size: 13px; color: var(--haze); margin: 0; }
+.icon-pick { display: flex; flex-direction: column; gap: 6px; }
+.icon-pick .ip-l { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--dust); }
+.icon-pick .ip-g { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 5px; }
+.icon-pick button { font-size: 20px; line-height: 1; padding: 7px 0; min-width: 0; background: rgba(255,255,255,.05); border: 2px solid rgba(255,255,255,.18); }
+.icon-pick button[aria-pressed="true"] { border-color: var(--gold); background: rgba(230,184,76,.22); }
+.ic-svg { width: 1.15em; height: 1.15em; vertical-align: -.2em; display: inline-block; }
+.nm-ic { margin-right: 6px; }
+.report .save { margin: 10px 0 0; padding: 8px 10px; border-radius: 8px; background: #efe0b6; font-size: 15px; }
+.report .save.ok { background: #d8ecc8; }
+.report .save.err { background: #f4cfc8; }
+.report .btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.report .btns button { color: var(--ivory); }
+.report .btns button.go { color: var(--ink); }
+
+.tip { position: fixed; z-index: 40; max-width: 290px; padding: 9px 12px; border-radius: 10px; background: var(--paper); color: var(--ink); font-size: 14.5px; line-height: 1.35; box-shadow: 0 8px 22px rgba(0,0,0,.55); border: 2px solid #b89a5e; pointer-events: none; opacity: 0; transform: translateY(4px); transition: opacity .15s, transform .15s; }
+.tip.on { opacity: 1; transform: none; }
+.tip b { color: var(--red); }
+[data-tip] { cursor: help; }
+button[data-tip] { cursor: pointer; }
+.trail { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; margin-bottom: 10px; }
+.trail .tk { font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--dust); margin-right: 4px; }
+.trail .tp { min-width: 26px; height: 24px; padding: 0 7px; border-radius: 999px; display: inline-grid; place-items: center; font-size: 13px; font-weight: 700; background: rgba(0,0,0,.3); border: 1px solid var(--rail); color: var(--haze); }
+.trail .tp.done { background: var(--rail); color: var(--ivory); opacity: .75; }
+.trail .tp.now { background: var(--gold); border-color: var(--gold); color: var(--ink); box-shadow: 0 0 10px rgba(230,184,76,.6); }
+.intro { position: fixed; inset: 0; z-index: 15; display: none; place-items: center; padding: 16px; background: radial-gradient(ellipse at 50% 40%, rgba(40,22,10,.55), rgba(8,4,2,.92)); }
+.intro.on { display: grid; animation: introfade .5s ease-out; }
+@keyframes introfade { from { background-color: rgba(0,0,0,0); opacity: 0; } }
+.intro-card { width: min(520px, 100%); max-height: calc(100vh - 32px); overflow: auto; text-align: center; padding: 18px 20px 22px; border-radius: 14px; border: 3px solid var(--gold);
+  background: repeating-linear-gradient(90deg, rgba(0,0,0,.22) 0 2px, transparent 2px 60px), linear-gradient(180deg, var(--wood2), var(--wood));
+  box-shadow: 0 20px 60px rgba(0,0,0,.7); display: flex; flex-direction: column; align-items: center; gap: 10px; animation: introdrop .9s cubic-bezier(.2,1.4,.4,1); }
+@keyframes introdrop { 0% { transform: translateY(-60vh) rotate(-8deg); } 60% { transform: translateY(14px) rotate(2deg); } 80% { transform: translateY(-4px) rotate(-1deg); } 100% { transform: none; } }
+.intro-kicker { font-size: 13px; font-weight: 700; letter-spacing: .22em; text-transform: uppercase; color: var(--dust); animation: rise .6s .5s both; }
+.intro-title { font-family: var(--f-display); font-weight: 400; font-size: clamp(34px, 8vw, 54px); line-height: 1; margin: 0; color: var(--gold); text-shadow: 0 3px 0 #000; animation: rise .6s .7s both; }
+.intro-title span { font-size: .55em; color: var(--ivory); }
+.intro-title.noon { color: #ff9a5a; letter-spacing: .04em; }
+.intro-rules { margin: 0; font-size: 17px; color: var(--ivory); max-width: 440px; animation: rise .6s 1.1s both; }
+.intro-rules b { color: var(--gold); }
+@keyframes rise { from { opacity: 0; transform: translateY(12px); } }
+.intro-portrait { width: 150px; animation: swing 1.6s 1s ease-in-out infinite alternate; transform-origin: 50% 0; }
+.intro-portrait svg { width: 100%; display: block; background: #3a2414; border: 3px solid var(--gold); border-radius: 50%; }
+.intro-poster { width: 180px; background: var(--paper); color: var(--ink); padding: 6px 8px 8px; border-radius: 2px; box-shadow: 0 6px 16px rgba(0,0,0,.6); transform-origin: 50% 0; animation: posterdrop 1s .4s both cubic-bezier(.2,1.5,.4,1), swing 2s 1.4s ease-in-out infinite alternate; }
+.intro-poster svg { display: block; width: 100%; height: auto; }
+.intro-poster .w { font-family: var(--f-display); font-size: 26px; line-height: 1; }
+.intro-poster .n { font-family: var(--f-display); font-size: 17px; margin-top: 4px; }
+.intro-poster .i { font-size: 13px; font-weight: 700; color: #6b5a3e; }
+.intro-poster .b { font-family: var(--f-display); font-size: 16px; color: var(--red); }
+@keyframes posterdrop { from { transform: translateY(-40px) rotate(-12deg); opacity: 0; } }
+@keyframes swing { from { transform: rotate(-2deg); } to { transform: rotate(2deg); } }
+button.big { font-size: 20px; padding: 12px 26px; margin-top: 4px; animation: rise .5s 1.5s both; }
+button.big:not(:disabled) { animation: rise .5s 1.5s both, glow 1.4s 2s ease-in-out infinite alternate; }
+@keyframes glow { to { box-shadow: 0 0 0 4px rgba(230,184,76,.35), 0 0 24px rgba(230,184,76,.6); } }
+.overlay { position: fixed; inset: 0; background: rgba(10,6,3,.78); display: none; place-items: center; padding: 16px; z-index: 9; }
+.overlay.on { display: grid; }
+.report { background: var(--paper); color: var(--ink); border-radius: 10px; padding: 18px 20px; max-width: 560px; width: 100%; max-height: calc(100vh - 32px); overflow: auto; box-shadow: 0 10px 40px rgba(0,0,0,.6); }
+.report h2 { font-family: var(--f-display); font-weight: 400; margin: 0 0 4px; font-size: 28px; color: var(--red); }
+.report h3 { margin: 14px 0 4px; font-size: 14px; letter-spacing: .14em; text-transform: uppercase; color: #6b5a3e; }
+.report table { width: 100%; border-collapse: collapse; font-size: 15px; }
+.report td { padding: 3px 4px; border-bottom: 1px solid #d6c294; }
+.report td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+.report p { margin: 4px 0; }
+
+.songbook .top button { align-self: center; }
+.hankstage { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: center; border: 1px solid var(--rail); border-radius: 16px; padding: 16px; background: linear-gradient(180deg, var(--wood2), var(--wood)); }
+.hank { width: 240px; height: auto; display: block; }
+.hankside { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.bubble.big { font-size: 19px; margin: 0; justify-self: stretch; }
+.bubble.big::before { left: -9px; top: 26px; bottom: auto; border: 9px solid transparent; border-right-color: var(--ivory); border-left: 0; }
+.bubble.big i { color: var(--red); font-style: italic; }
+.hankstaff { background: var(--ivory); border-radius: 10px; width: 220px; padding: 4px 6px; display: none; }
+.hankstaff.on { display: block; }
+.hankstaff svg { width: 100%; height: auto; display: block; }
+.steps3 { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; counter-reset: st; }
+.steps3 li { counter-increment: st; font-size: 14px; font-weight: 700; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--rail); color: var(--haze); background: var(--plank); }
+.steps3 li::before { content: counter(st) ". "; }
+.steps3 li.now { background: var(--gold); border-color: var(--gold); color: var(--ink); }
+.ivrow h2 { font-family: var(--f-display); font-weight: 400; font-size: 20px; color: var(--gold); margin: 4px 0 8px; }
+.ivbtns { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.ivbtns button { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; text-align: left; padding: 8px 12px; }
+.ivbtns button b { font-size: 16px; }
+.ivbtns button small { font-weight: 600; font-size: 12.5px; color: var(--dust); line-height: 1.2; }
+.ivbtns button[aria-pressed="true"] { background: var(--gold); border-color: var(--gold); color: var(--ink); }
+.ivbtns button[aria-pressed="true"] small { color: var(--ink); }
+@media (max-width: 640px) {
+  .hankstage { grid-template-columns: 1fr; justify-items: center; }
+  .hank { width: 190px; }
+  .bubble.big::before { left: 50%; top: -9px; border: 9px solid transparent; border-bottom-color: var(--ivory); border-top: 0; }
+}
+@media (max-width: 640px) {
+  .barrow { grid-template-columns: 1fr auto 1fr; grid-template-areas: "bubble bubble bubble" ". dealer clock"; gap: 8px; }
+  .bubble { justify-self: stretch; margin-bottom: 0; }
+  .bubble::before { left: 50%; bottom: -9px; border: 9px solid transparent; border-top-color: var(--ivory); border-bottom: 0; }
+  .clock { justify-self: start; margin-bottom: 30px; }
+  .dealer { width: 110px; }
+  .room { padding: 0 8px 16px; }
+  .roundtable { border-radius: 50% / 18%; border-width: 12px; padding: 26px 12px 40px; margin-top: -42px; }
+  .cards { display: grid; grid-template-columns: repeat(2, auto); }
+  .card { width: 40vw; max-width: 150px; }
+  .trayR { margin-left: 0; }
+}
+</style>
+</head>
+<body>
+<div class="wrap" id="home">
+  <header class="top home-top">
+    <div class="brand">
+      <span class="eyebrow">Mr. Milnes's Music Theory Games</span>
+      <h1>Earshot Saloon</h1>
+      <p class="tagline">Hear the interval. Find the note. Lasso the outlaws.</p>
+    </div>
+    <div class="topbtns">
+      <button type="button" class="who-pill" id="who-btn">👤 Sign in</button>
+      <a class="btnlink" href="https://drkeyzzz.github.io/">All games</a>
+    </div>
+  </header>
+
+  <section class="panel">
+    <h2 class="ph">Pick your table</h2>
+    <div class="diffs" id="diffs"></div>
+    <div class="row"><span class="rk">Clef</span><div class="seg" id="seg-clef"></div></div>
+    <div class="row"><span class="rk">Mode</span><div class="seg" id="seg-mode"></div></div>
+    <div class="row helpers" id="helpers"><span class="rk">Greenhorn helpers</span>
+      <label><input type="checkbox" id="h-letters" checked>Letter names</label>
+      <label><input type="checkbox" id="h-ear" checked>👂 Listen to each card</label>
+      <label><input type="checkbox" id="h-steps" checked>Count the steps</label>
+      <label><input type="checkbox" id="h-piano" checked>Piano strip</label>
+    </div>
+    <div id="practice-set" hidden>
+      <div class="row"><span class="rk">Intervals</span><div class="ivpick" id="ivpick"></div></div>
+      <div class="row"><span class="rk">Direction</span><div class="seg" id="seg-dir"></div></div>
+      <div class="row"><span class="rk">Sound</span><div class="seg" id="seg-sound"></div></div>
+    </div>
+    <div class="row startrow">
+      <button type="button" class="go big" id="start-btn">Deal me in 🤠</button>
+      <button type="button" id="board-btn">🏆 Leaderboard</button>
+      <button type="button" class="twoline" id="songbook-btn-home"><span>🎹 Hank's Songbook</span><small>Learn the intervals</small></button>
+    </div>
+    <p class="muted" id="mode-note"></p>
+  </section>
+
+  <section class="panel">
+    <h2 class="ph">Your Wanted posters</h2>
+    <p class="muted" id="poster-count"></p>
+    <div class="posters wall-big" id="home-posters"></div>
+  </section>
+
+  <section class="panel howto">
+    <h2 class="ph">How to play</h2>
+    <ol>
+      <li>The dealer plays <b>their card</b>, then a <b>mystery note</b>. Four cards flip over. <b>Pick the card that shows the mystery note.</b></li>
+      <li>Right answers win chips, and a streak multiplies them. Wrong answers cost a chip.</li>
+      <li>Every town has <b>6 hands</b>, a visit from <b>Crooked Clara</b> (is she playing fair?), then a <b>High Noon</b> showdown with an Interval Outlaw. Win it to lasso the outlaw and stamp their Wanted poster.</li>
+      <li><b>Press your luck:</b> after each town, cash out to keep your chips as your score, or ride on for bigger stakes. Go bust and you keep only half your best.</li>
+      <li>Stuck on an interval? Visit <b>Hank's Songbook</b> to hear each one with a song you know.</li>
+    </ol>
+  </section>
+</div>
+
+<div class="wrap" id="game" hidden>
+  <header class="top">
+    <div class="brand">
+      <span class="eyebrow" id="eyebrow">Town 1 · Tumbleweed Flats</span>
+      <h1>Earshot Saloon</h1>
+    </div>
+    <div class="hud">
+      <div class="stat trail-only"><span class="k">Bankroll</span><span class="v money" id="hud-bank">$100</span></div>
+      <div class="stat trail-only"><span class="k">Bust pays</span><span class="v" id="hud-best">$50</span></div>
+      <div class="stat trail-only"><span class="k">Chip</span><span class="v" id="hud-chip">$10</span></div>
+      <div class="stat practice-only"><span class="k">Right</span><span class="v money" id="hud-right">0 / 0</span></div>
+      <div class="stat"><span class="k">Streak</span><span class="v mult" id="hud-streak">×1</span></div>
+      <div class="stat trail-only"><span class="k">Hand</span><span class="v" id="hud-hand">1 / 10</span></div>
+      <button type="button" id="songbook-btn" class="twoline"><span>🎹 Hank's Songbook</span><small>Learn the intervals</small></button>
+      <button type="button" id="cashout" class="twoline trail-only"><span>💰 Cash out</span><small id="cashout-amt">$100</small></button>
+      <button type="button" id="practice-end" class="practice-only">End practice</button>
+    </div>
+  </header>
+
+  <section class="stage" aria-label="Saloon table">
+    <div class="wall">
+      <div class="trail trail-only" id="trail" aria-label="This town's trail"></div>
+      <div class="wallrow">
+        <div class="townsign" id="townsign"><b id="town-name">Tumbleweed Flats</b><span id="town-pop">Pop. 12</span></div>
+        <div class="posters" id="posters" aria-label="Wanted posters"></div>
+      </div>
+    </div>
+
+    <div class="room">
+      <div class="barrow">
+        <div class="clock" id="clock"><span>High noon</span><b id="clock-n">8</b></div>
+        <svg class="dealer" id="dealer" viewBox="0 0 120 112" aria-hidden="true"></svg>
+        <div class="bubble" id="bubble" aria-live="polite"><span class="who" id="who">The dealer</span><span id="say">Howdy, partner. Pull up a chair.</span></div>
+      </div>
+      <div class="roundtable">
+        <div class="holeWrap">
+          <div class="card hole" id="hole"><div class="inner"><div class="face"></div><div class="back"><span>E</span></div></div></div>
+          <span class="lbl" id="hole-lbl">Dealer's card</span>
+        </div>
+        <span class="lbl" id="cards-lbl">Which note did you hear?</span>
+        <div class="cards" id="cards"></div>
+        <div class="timetrack"><div class="timebar" id="timebar"></div></div>
+        <div class="actions" id="actions"></div>
+      </div>
+    </div>
+
+    <div class="tray">
+      <div class="trayR">
+        <button type="button" id="again">♪ Again, Dealer</button>
+        <button type="button" id="hank">🎹 Ask Hank</button>
+      </div>
+    </div>
+    <div class="piano" id="piano"></div>
+  </section>
+
+</div>
+
+<div class="wrap songbook" id="songbook" hidden>
+  <header class="top">
+    <div class="brand"><span class="eyebrow">At the piano</span><h1>Hank's Songbook</h1></div>
+    <button type="button" id="songbook-back">← Back</button>
+  </header>
+  <section class="hankstage">
+    <svg class="hank" id="hank-svg" viewBox="0 0 220 150" aria-hidden="true"></svg>
+    <div class="hankside">
+      <div class="bubble big" aria-live="polite"><span class="who">Honky-Tonk Hank</span><span id="hank-say">Pick an interval and I'll play it, then a song that starts with it, then the interval again.</span></div>
+      <div class="hankstaff" id="hank-staff"></div>
+      <ol class="steps3" id="hank-steps"><li>The interval</li><li>The song</li><li>The interval again</li></ol>
+    </div>
+  </section>
+  <section class="panel">
+    <div class="ivrow"><h2>Intervals going up ↑</h2><div class="ivbtns" id="row-up"></div></div>
+    <div class="ivrow"><h2>Intervals going down ↓</h2><div class="ivbtns" id="row-down"></div></div>
+  </section>
+</div>
+
+<div class="wrap" id="board" hidden>
+  <header class="top">
+    <div class="brand"><span class="eyebrow">Earshot Saloon</span><h1>Leaderboard</h1></div>
+    <button type="button" id="board-back">← Back</button>
+  </header>
+  <section class="panel">
+    <div class="row"><span class="rk">Board</span><div class="seg" id="seg-scope"></div></div>
+    <div class="row"><span class="rk">Difficulty</span><div class="seg" id="seg-bdiff"></div></div>
+    <div class="row"><span class="rk">Clef</span><div class="seg" id="seg-bclef"></div></div>
+    <p class="muted" id="board-summary"></p>
+    <ol class="board-list" id="ranks"></ol>
+    <div class="board-empty" id="board-empty" hidden></div>
+  </section>
+</div>
+
+<div class="modal" id="welcome" hidden role="dialog" aria-modal="true" aria-labelledby="w-title">
+  <form class="mcard" id="w-form" autocomplete="off" novalidate>
+    <span class="eyebrow">Howdy, stranger</span>
+    <h2 id="w-title">Sign the guest book</h2>
+    <p class="muted">Tell us who you are. Your name goes on the leaderboards.</p>
+    <div class="wrow">
+      <label for="w-first">First name<input type="text" id="w-first" maxlength="15" autocapitalize="words" spellcheck="false"></label>
+      <label for="w-init">Last initial<input type="text" id="w-init" maxlength="1" autocapitalize="characters" spellcheck="false"></label>
+    </div>
+    <div class="icon-pick" id="icon-pick"><span class="ip-l">Pick your icon</span><div class="ip-g" id="icon-grid" role="group" aria-label="Your icon"></div></div>
+    <label for="w-code">Class code<input type="text" id="w-code" maxlength="7" autocapitalize="characters" spellcheck="false" placeholder="From your teacher"></label>
+    <label class="wsolo" for="w-solo"><input type="checkbox" id="w-solo"> I'm not in a class (World leaderboard only)</label>
+    <p class="werr" id="w-error" role="alert"></p>
+    <button class="go big" id="w-go" type="submit">Pull up a chair</button>
+    <button id="w-guest" type="button">Play as guest</button>
+    <p class="wnote">Guests' scores aren't saved. One sign-in works for every game on Mr. Milnes's Music Theory Games.</p>
+  </form>
+</div>
+
+<div class="intro" id="intro" role="dialog" aria-modal="true" aria-label="Mini-game"><div class="intro-card" id="intro-card"></div></div>
+<div class="overlay" id="overlay"><div class="report" id="report"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+/* ---------- Music data ---------- */
+const NAT = [0, 2, 4, 5, 7, 9, 11];
+const LET = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+const ACC_TXT = { '-2': '\u{1D12B}', '-1': '♭', '0': '', '1': '♯', '2': '\u{1D12A}' };
+const ACC_DROP = { '-2': .4, '-1': .4, '0': .53, '1': .52, '2': .52 };
+const CLEF = { treble: { glyph: '\u{1D11E}', bottom: 4 * 7 + 2, lift: 0 }, bass: { glyph: '\u{1D122}', bottom: 2 * 7 + 4, lift: .422 } };
+
+const IV = {
+  m2: { num: 2, semis: 1, q: 'm', name: 'minor 2nd', out: 'm2' },
+  M2: { num: 2, semis: 2, q: 'M', name: 'major 2nd', out: 'M2' },
+  m3: { num: 3, semis: 3, q: 'm', name: 'minor 3rd', out: 'm3' },
+  M3: { num: 3, semis: 4, q: 'M', name: 'major 3rd', out: 'M3' },
+  P4: { num: 4, semis: 5, q: 'P', name: 'perfect 4th', out: 'P4' },
+  A4: { num: 4, semis: 6, q: 'A', name: 'augmented 4th', out: 'TT' },
+  d5: { num: 5, semis: 6, q: 'd', name: 'diminished 5th', out: 'TT' },
+  P5: { num: 5, semis: 7, q: 'P', name: 'perfect 5th', out: 'P5' },
+  m6: { num: 6, semis: 8, q: 'm', name: 'minor 6th', out: 'm6' },
+  M6: { num: 6, semis: 9, q: 'M', name: 'major 6th', out: 'M6' },
+  m7: { num: 7, semis: 10, q: 'm', name: 'minor 7th', out: 'm7' },
+  M7: { num: 7, semis: 11, q: 'M', name: 'major 7th', out: 'M7' },
+  P8: { num: 8, semis: 12, q: 'P', name: 'octave', out: 'P8' },
+  A1: { num: 1, semis: 1, q: 'A', name: 'augmented unison', out: 'm2', disg: true },
+  A2: { num: 2, semis: 3, q: 'A', name: 'augmented 2nd', out: 'm3', disg: true },
+  d4: { num: 4, semis: 4, q: 'd', name: 'diminished 4th', out: 'M3', disg: true },
+  A5: { num: 5, semis: 8, q: 'A', name: 'augmented 5th', out: 'm6', disg: true },
+  d7: { num: 7, semis: 9, q: 'd', name: 'diminished 7th', out: 'M6', disg: true },
+  A6: { num: 6, semis: 10, q: 'A', name: 'augmented 6th', out: 'm7', disg: true },
+  d8: { num: 8, semis: 11, q: 'd', name: 'diminished octave', out: 'M7', disg: true },
+};
+const SHORT = k => ({ A4: 'A4', d5: 'd5' }[k] || k);
+const BASE4 = ['M2', 'M3', 'P5', 'P8'];
+const POOLS = {
+  newbie: BASE4, easy: BASE4,
+  medium: [...BASE4, 'm2', 'm3', 'P4', 'M6'],
+  hard: [...BASE4, 'm2', 'm3', 'P4', 'M6', 'A4', 'd5', 'm6', 'm7', 'M7'],
+  expert: [...BASE4, 'm2', 'm3', 'P4', 'M6', 'A4', 'd5', 'm6', 'm7', 'M7', 'A1', 'A2', 'd4', 'A5', 'd7', 'A6', 'd8'],
+};
+const OUTLAWS = {
+  m2: { name: 'Minor Mae', iv: 'minor 2nd', hat: '#5b3a29', band: '#7a3fa0', must: 0, tall: 0, hair: 1 },
+  M2: { name: 'Whole-Step Wes', iv: 'major 2nd', hat: '#2f2a24', band: '#c0392b', must: 1, tall: 0 },
+  m3: { name: 'Moody Molly', iv: 'minor 3rd', hat: '#3b4a6b', band: '#2c6e8f', must: 0, tall: 1, hair: 1 },
+  M3: { name: 'Sunny Sam', iv: 'major 3rd', hat: '#c8a24a', band: '#e67e22', must: 1, tall: 0 },
+  P4: { name: 'Fourth-Rate Fred', iv: 'perfect 4th', hat: '#6d5a3a', band: '#4a7a3a', must: 1, tall: 1 },
+  TT: { name: 'The Tritone Kid', iv: 'tritone', hat: '#1c1c1c', band: '#b02a2a', must: 0, tall: 0 },
+  P5: { name: 'Perfect Fifth Pete', iv: 'perfect 5th', hat: '#7a4b2a', band: '#2d5f9a', must: 1, tall: 0 },
+  m6: { name: 'Sad Sadie Sixth', iv: 'minor 6th', hat: '#4b3b5b', band: '#8e5aa8', must: 0, tall: 1, hair: 1 },
+  M6: { name: 'Six-String Sid', iv: 'major 6th', hat: '#8a5a2b', band: '#d4a017', must: 1, tall: 0 },
+  m7: { name: 'Silas Seven-Toes', iv: 'minor 7th', hat: '#3a3a3a', band: '#5f8f3a', must: 1, tall: 1 },
+  M7: { name: 'Leading-Tone Lou', iv: 'major 7th', hat: '#5a2b2b', band: '#d35454', must: 0, tall: 0, hair: 1 },
+  P8: { name: 'Octave Ollie', iv: 'octave', hat: '#2b4a4a', band: '#e0b04a', must: 1, tall: 1 },
+};
+const OUT_ORDER = ['m2', 'M2', 'm3', 'M3', 'P4', 'TT', 'P5', 'm6', 'M6', 'm7', 'M7', 'P8'];
+const TOWNS = ['Tumbleweed Flats', 'Minor Mesa', 'Perfect Fifth Flats', 'Half-Step Hollow', 'Tritone Gulch', 'Leading-Tone Ridge', 'Octave Canyon', 'Dissonance Draw'];
+
+// Hank's songbook: offsets in semitones from the first note of the interval, and lengths in seconds.
+// check: true marks a sketch that Mr. Milnes should confirm by ear (or swap for a song his students know).
+const HANK = {
+  up: {
+    m2: ['Jaws', [0, 1, 0, 1, 0, 1], [.5, .5, .35, .35, .22, .5]],
+    M2: ['Happy Birthday', [0, 0, 2, 0, 5, 4], [.3, .15, .5, .5, .5, 1]],
+    m3: ['Greensleeves', [0, 3, 5, 7, 9, 7, 5], [.3, .6, .3, .45, .15, .3, .7]],
+    M3: ['When the Saints Go Marching In', [0, 4, 5, 7], [.3, .3, .3, 1.2]],
+    P4: ['Here Comes the Bride', [0, 5, 5, 5], [.5, .38, .14, 1]],
+    TT: ['Maria (West Side Story)', [0, 6, 7], [.4, .4, 1]],
+    P5: ['Twinkle, Twinkle, Little Star', [0, 0, 7, 7, 9, 9, 7], [.35, .35, .35, .35, .35, .35, .8]],
+    m6: ['The Entertainer', [-2, -1, 0, 8, 0, 8, 0, 8], [.2, .2, .3, .45, .3, .45, .3, .9], { at: 2 }],
+    M6: ['My Bonnie Lies Over the Ocean', [0, 9, 7, 5, 7, 5, 2, 0], [.35, .5, .25, .35, .35, .35, .35, .9]],
+    m7: ['Somewhere (West Side Story)', [0, 10, 9], [.45, .6, 1]],
+    M7: ['Take On Me (chorus)', [0, 11, 12], [.4, .4, .9], { check: true }],
+    P8: ['Somewhere Over the Rainbow', [0, 12, 11, 7, 9, 11, 12], [.6, .6, .3, .15, .15, .3, .7]],
+  },
+  down: {
+    m2: ['Für Elise', [0, -1, 0, -1, 0, -5, -2, -4, -7], [.2, .2, .2, .2, .2, .2, .2, .2, .6]],
+    M2: ['Three Blind Mice', [0, -2, -4, 0, -2, -4], [.45, .45, .9, .45, .45, .9]],
+    m3: ['Hey Jude', [0, -3], [.5, 1]],
+    M3: ['Swing Low, Sweet Chariot', [0, -4, -4], [.6, .3, 1]],
+    P4: ['Born Free', [0, -5], [.6, 1.2]],
+    TT: ['Purple Haze', [0, -6, 0, -6], [.3, .3, .3, .6]],
+    P5: ['The Flintstones', [0, -7, 0], [.45, .45, .9]],
+    m6: ['Love Story (theme)', [0, -8], [.5, 1.1], { check: true }],
+    M6: ['Nobody Knows the Trouble I\'ve Seen', [0, -9], [.5, 1.1], { check: true }],
+    m7: ['An American in Paris', [0, -10], [.4, 1], { check: true }],
+    M7: ['I Love You (Cole Porter)', [0, -11], [.6, 1.2], { check: true }],
+    P8: ['Willow Weep for Me', [0, -12], [.6, 1.2], { check: true }],
+  },
+};
+
+/* ---------- Mouse-over help for first-time players ---------- */
+const TIPS = {
+  hand: '<b>A regular hand</b><br>The dealer plays their card, then a mystery note. Pick the card that shows the mystery note.',
+  clara: '<b>🃏 Crooked Clara</b> (once in every town)<br>A card sharp sits in. She shows you two notes on the staff and plays them, but sometimes she plays the second note <b>wrong</b> on purpose. You call it: <b>Fair</b> or <b>Cheat!</b> Catch her cheating to win double.',
+  noon: '<b>⏰ High Noon</b> (the end of every town)<br>An Interval Outlaw rides in and challenges you to <b>3 quick draws</b>, all the same interval. Pick the right card before the clock runs out. Win 2 of 3 to <b>lasso the outlaw</b>, collect the bounty and stamp their Wanted poster.',
+  disg: '<b>Outlaws in disguise</b> (Expert)<br>An augmented or diminished interval sounds just like a regular one but is spelled differently, like G♯ instead of A♭.',
+  town: '<b>Every town on the trail</b><br>6 regular hands, a visit from Crooked Clara, then the High Noon showdown. After that you choose: cash out, or ride on to the next town, where chips are worth more.',
+  bank: 'Your chips, in dollars. Right answers win chips; wrong answers lose them.',
+  bust: 'If you run out of chips, your score is <b>half your best bankroll</b>.',
+  chip: 'What one chip is worth in this town. It goes up $5 in every new town.',
+  streak: 'Right answers in a row. Your winnings multiply: <b>×2</b> after 3, <b>×3</b> after 6, <b>×4</b> after 9.',
+  handno: 'Which hand of this town you are on. Hand 7 is Crooked Clara, and hands 8–10 are the High Noon showdown.',
+  cash: 'End the run now and keep every chip you have. That is your score.',
+  again: 'Hear the two notes again.',
+  hank: 'Honky-Tonk Hank plays a song that starts with the interval you heard.',
+  songbook: 'Hear every interval with a song you know, going up and going down.',
+};
+const tipEl = document.createElement('div'); tipEl.className = 'tip'; tipEl.setAttribute('role', 'tooltip');
+document.body.appendChild(tipEl);
+let tipFor = null;
+function showTip(t) {
+  tipFor = t; tipEl.innerHTML = t.dataset.tip; tipEl.classList.add('on');
+  const r = t.getBoundingClientRect(), w = tipEl.offsetWidth, h = tipEl.offsetHeight;
+  const x = Math.max(8, Math.min(innerWidth - w - 8, r.left + r.width / 2 - w / 2));
+  const y = r.bottom + h + 16 > innerHeight ? r.top - h - 8 : r.bottom + 8;
+  tipEl.style.left = x + 'px'; tipEl.style.top = y + 'px';
+}
+function hideTip() { tipFor = null; tipEl.classList.remove('on'); }
+document.addEventListener('mouseover', e => { const t = e.target.closest('[data-tip]'); if (t) { if (t !== tipFor) showTip(t); } else if (tipFor) hideTip(); });
+document.addEventListener('focusin', e => { const t = e.target.closest('[data-tip]'); t ? showTip(t) : hideTip(); });
+document.addEventListener('scroll', hideTip, true);
+// On a touch screen, tapping a non-button item with help shows its tip
+document.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') return; const t = e.target.closest('[data-tip]'); if (t && !t.closest('button')) showTip(t); else hideTip(); });
+function drawTrail() {
+  const n = S.handNo, town = TOWNS[S.town % TOWNS.length];
+  let h = `<span class="tk" data-tip="${TIPS.town}">${town} trail ⓘ</span>`;
+  for (let i = 0; i < 6; i++) h += `<span class="tp ${i < n ? 'done' : i === n ? 'now' : ''}" data-tip="${TIPS.hand}">${i + 1}</span>`;
+  h += `<span class="tp wide ${n > 6 ? 'done' : n === 6 ? 'now' : ''}" data-tip="${TIPS.clara}">🃏 Crooked Clara</span>`;
+  h += `<span class="tp wide ${n >= 10 ? 'done' : n >= 7 ? 'now' : ''}" data-tip="${TIPS.noon}">⏰ High Noon${n >= 7 && n < 10 ? ` ${n - 6}/3` : ''}</span>`;
+  $('trail').innerHTML = h;
+}
+
+/* ---------- State ---------- */
+const S = {
+  diff: 'newbie', clef: 'treble', honky: true, mode: 'trail',
+  practice: { ivs: ['M2', 'M3', 'P5', 'P8'], dir: 'up', sound: 'mel' },
+  town: 0, handNo: 0, bank: 100, best: 100, streak: 0,
+  phase: 'idle', hand: null, bet: 0, replays: 0, hankUsed: false,
+  noon: null, caught: {}, seen: {},
+  stats: null,
+  forceDisguise: false, tok: 0,
+};
+const freshStats = () => ({ total: 0, right: 0, byIv: {}, byKey: {}, mix: {}, bluff: [0, 0], bestStreak: 0, lassoed: [], t0: Date.now() });
+S.stats = freshStats();
+const NOON_SECS = 10; // High Noon: 10 seconds a draw, with one replay allowed
+const chipVal = () => 10 + 5 * S.town;
+const isHelped = () => S.diff === 'newbie';
+const help = id => isHelped() && document.getElementById(id).checked;
+const mult = () => S.streak >= 9 ? 4 : S.streak >= 6 ? 3 : S.streak >= 3 ? 2 : 1;
+const rnd = n => Math.floor(Math.random() * n);
+const pick = a => a[rnd(a.length)];
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = rnd(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const $ = id => document.getElementById(id);
+
+/* ---------- Notes ---------- */
+const midiOf = n => 12 * (n.oct + 1) + NAT[n.l] + n.acc;
+const dOf = n => n.oct * 7 + n.l;
+const fromD = (d, acc) => ({ l: ((d % 7) + 7) % 7, oct: Math.floor(d / 7), acc });
+// Expert, or a practice set with disguises, allows double sharps/flats and odd spellings like E♯
+const wild = () => S.diff === 'expert' || (S.mode === 'practice' && S.practice.ivs.some(k => IV[k].disg));
+const accLimit = () => wild() ? 2 : 1;
+function spell(ref, key, dir) {
+  const iv = IV[key], nat = fromD(dOf(ref) + dir * (iv.num - 1), 0);
+  const acc = midiOf(ref) + dir * iv.semis - midiOf(nat);
+  if (Math.abs(acc) > accLimit()) return null;
+  // avoid odd spellings below Expert (E♯, B♯, F♭, C♭)
+  if (!wild() && ((acc === 1 && (nat.l === 2 || nat.l === 6)) || (acc === -1 && (nat.l === 3 || nat.l === 0)))) return null;
+  return { ...nat, acc };
+}
+const range = () => ({ newbie: [-1, 9], easy: [-1, 9], medium: [-3, 11], hard: [-3, 11], expert: [-5, 13] })[S.diff];
+const posOf = (n, clef) => dOf(n) - CLEF[clef].bottom;
+const inRange = (n, clef) => { const p = posOf(n, clef), [lo, hi] = range(); return p >= lo && p <= hi; };
+const nameOf = n => LET[n.l] + ACC_TXT[n.acc];
+function randomRef() {
+  let l, acc = 0;
+  if (S.diff === 'newbie' || S.diff === 'easy') { const r = pick([[0, 0], [1, 0], [3, 0], [4, 0], [6, -1]]); l = r[0]; acc = r[1]; }
+  else if (S.diff === 'medium') { const r = pick([[0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [5, 0], [6, 0], [6, -1], [3, 1]]); l = r[0]; acc = r[1]; }
+  else { l = rnd(7); acc = pick([-1, 0, 0, 1]); if ((acc === 1 && (l === 2 || l === 6)) || (acc === -1 && (l === 3 || l === 0))) acc = 0; }
+  return { l, oct: 2 + rnd(5), acc };
+}
+// Newbie eases in: 2 cards in the first town, 3 in the second, then 4
+function cardCount() { return S.mode === 'trail' && S.diff === 'newbie' ? Math.min(4, 2 + S.town) : 4; }
+
+function buildHand(forceKey, opts = {}) {
+  const P = S.mode === 'practice' ? S.practice : null;
+  // practice: answers come from the picked intervals; wrong cards from the difficulty's set plus the picks
+  const pool = P ? [...new Set([...POOLS[S.diff], ...P.ivs])] : POOLS[S.diff];
+  const ansPool = P ? P.ivs : pool;
+  for (let t = 0; t < 2000; t++) {
+    const clef = S.clef === 'mixed' ? pick(['treble', 'bass']) : S.clef;
+    const key = forceKey || pick(ansPool);
+    const dir = P ? (P.dir === 'up' ? 1 : P.dir === 'down' ? -1 : pick([1, -1])) : (S.diff === 'newbie' || S.diff === 'easy') ? 1 : pick([1, -1]);
+    const ref = randomRef();
+    if (!inRange(ref, clef)) continue;
+    const ans = spell(ref, key, dir);
+    if (!ans || !inRange(ans, clef)) continue;
+    const need = cardCount() - 1;
+    const semisAns = IV[key].semis;
+    let cands = shuffle(pool.filter(k => IV[k].semis !== semisAns)).map(k => ({ k, n: spell(ref, k, dir) }))
+      .filter(c => c.n && inRange(c.n, clef))
+      .map(c => ({ ...c, s: Math.abs(IV[c.k].semis - semisAns) + Math.random() * 1.6 }))
+      .sort((a, b) => a.s - b.s);
+    const used = new Set([semisAns]), dec = [];
+    for (const c of cands) { if (used.has(IV[c.k].semis)) continue; used.add(IV[c.k].semis); dec.push(c); if (dec.length === need) break; }
+    if (dec.length < need) continue;
+    const cards = shuffle([{ k: key, n: ans, right: true }, ...dec.map(c => ({ k: c.k, n: c.n, right: false }))]);
+    const harmonic = !opts.noHarm && (P ? (P.sound === 'harm' || (P.sound === 'both' && Math.random() < .5)) : S.diff === 'expert' && Math.random() < .5);
+    return { clef, ref, key, dir, ans, cards, harmonic };
+  }
+  return null;
+}
+
+/* ---------- Staff drawing ---------- */
+const VB_W = 140, VB_H = 126, BOT = 88; // room above and below for two ledger lines plus a sharp or flat
+const yP = p => BOT - p * 5;
+function noteSVG(x, p, acc, opts = {}) {
+  let s = '';
+  for (let lp = -2; lp >= p; lp -= 2) s += `<line class="ledger" x1="${x - 11}" x2="${x + 11}" y1="${yP(lp)}" y2="${yP(lp)}"/>`;
+  for (let lp = 10; lp <= p; lp += 2) s += `<line class="ledger" x1="${x - 11}" x2="${x + 11}" y1="${yP(lp)}" y2="${yP(lp)}"/>`;
+  const y = yP(p), col = opts.color || 'var(--ink)';
+  s += `<g opacity="${opts.ghost ? .35 : 1}"><ellipse cx="${x}" cy="${y}" rx="7.4" ry="4.7" fill="${col}"/><ellipse cx="${x}" cy="${y}" rx="3.6" ry="2.2" transform="rotate(-60 ${x} ${y})" fill="var(--ivory)"/>`;
+  if (acc) { const wide = acc === -2 ? 3.5 : 0; s += `<text class="accg" x="${x - 18 - wide}" y="${y + ACC_DROP[acc] * 10}" font-size="40" text-anchor="middle" fill="${col}">${ACC_TXT[acc]}</text>`; }
+  return s + '</g>';
+}
+function staffSVG({ clef, ref, note, steps, both }) {
+  let s = `<svg class="staff" viewBox="0 0 ${VB_W} ${VB_H}" aria-hidden="true">`;
+  for (let p = 0; p <= 8; p += 2) s += `<line class="sl" x1="2" x2="${VB_W - 2}" y1="${yP(p)}" y2="${yP(p)}"/>`;
+  s += `<text class="clefg" x="5" y="${BOT - CLEF[clef].lift * 10}" font-size="40">${CLEF[clef].glyph}</text>`;
+  if (help('h-letters')) {
+    for (let p = -1; p <= 9; p++) {
+      const d = CLEF[clef].bottom + p, x = p % 2 === 0 ? 125 : 134;
+      s += `<text class="letters" x="${x}" y="${yP(p) + 2.6}" text-anchor="middle">${LET[((d % 7) + 7) % 7]}</text>`;
+    }
+  }
+  if (steps && ref && note) {
+    const p0 = posOf(ref, clef), p1 = posOf(note, clef), n = Math.abs(p1 - p0) + 1, dir = Math.sign(p1 - p0) || 1;
+    const x0 = 44, x1 = 102;
+    s += noteSVG(x0, p0, ref.acc, { ghost: true });
+    for (let k = 0; k < n; k++) {
+      const x = n === 1 ? x1 : x0 + (x1 - x0) * k / (n - 1), p = p0 + dir * k;
+      if (k > 0 && k < n - 1) s += `<circle class="dot" cx="${x}" cy="${yP(p)}" r="2.3"/>`;
+      s += `<text class="dotn" x="${x}" y="${yP(p) + (dir > 0 ? -6 : 10)}" text-anchor="middle">${k + 1}</text>`;
+    }
+    s += noteSVG(x1, p1, note.acc);
+  } else if (both && ref && note) {
+    s += noteSVG(52, posOf(ref, clef), ref.acc) + noteSVG(104, posOf(note, clef), note.acc);
+  } else if (note) {
+    s += noteSVG(84, posOf(note, clef), note.acc);
+  }
+  return s + '</svg>';
+}
+function noteName(n) {
+  const a = ACC_TXT[n.acc];
+  return LET[n.l] + (a ? `<span class="acc">${a}</span>` : '');
+}
+
+/* ---------- Audio ---------- */
+let AC, MASTER;
+function ac() {
+  if (!AC) { AC = new (window.AudioContext || window.webkitAudioContext)(); MASTER = AC.createGain(); MASTER.gain.value = .6; MASTER.connect(AC.destination); }
+  if (AC.state === 'suspended') AC.resume();
+  return AC;
+}
+let quietAt = 0; // audio-clock time when the last game note has mostly died away
+function tone(midi, when, dur = 1.5, vol = .32, dest) {
+  const c = ac(), f = 440 * 2 ** ((midi - 69) / 12);
+  if (!dest) quietAt = Math.max(quietAt, when + Math.min(dur, 1.1));
+  const out = c.createGain(), lp = c.createBiquadFilter();
+  lp.type = 'lowpass'; lp.frequency.value = Math.min(9000, f * 9);
+  out.gain.setValueAtTime(0, when); out.gain.linearRampToValueAtTime(vol, when + .006);
+  out.gain.exponentialRampToValueAtTime(vol * .3, when + .3); out.gain.exponentialRampToValueAtTime(.0005, when + dur);
+  out.connect(lp); lp.connect(dest || MASTER);
+  const detunes = S.honky ? [-9, 9] : [0];
+  for (const dt of detunes) [[1, 1], [2, .42], [3, .2], [4, .1], [5, .05]].forEach(([h, a]) => {
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = 'sine'; o.frequency.value = f * h; o.detune.value = dt; g.gain.value = a / detunes.length;
+    o.connect(g); g.connect(out); o.start(when); o.stop(when + dur + .05);
+  });
+}
+function blip(freq, when, dur, type = 'triangle', vol = .12) {
+  const c = ac(), o = c.createOscillator(), g = c.createGain();
+  o.type = type; o.frequency.value = freq;
+  g.gain.setValueAtTime(vol, when); g.gain.exponentialRampToValueAtTime(.0005, when + dur);
+  o.connect(g); g.connect(MASTER); o.start(when); o.stop(when + dur + .02);
+}
+function noise(when, dur = .05, vol = .15) {
+  const c = ac(), b = c.createBuffer(1, c.sampleRate * dur, c.sampleRate), d = b.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+  const src = c.createBufferSource(), g = c.createGain(), hp = c.createBiquadFilter();
+  hp.type = 'highpass'; hp.frequency.value = 1800; g.gain.value = vol;
+  src.buffer = b; src.connect(hp); hp.connect(g); g.connect(MASTER); src.start(when);
+}
+const sfx = {
+  flip: w => noise(w, .06, .2),
+  chips: () => { const t = ac().currentTime; [0, .06, .13].forEach((d, i) => blip(2600 + i * 400, t + d, .08, 'sine', .07)); },
+  win: () => { const t = ac().currentTime; [72, 76, 79].forEach((m, i) => blip(440 * 2 ** ((m - 69) / 12), t + i * .07, .35, 'triangle', .08)); },
+  lose: () => { const t = ac().currentTime; blip(130, t, .35, 'sawtooth', .07); blip(98, t + .12, .45, 'sawtooth', .07); },
+  tick: () => blip(1500, ac().currentTime, .03, 'square', .04),
+  lasso: () => { const c = ac(), t = c.currentTime, o = c.createOscillator(), g = c.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(300, t); o.frequency.exponentialRampToValueAtTime(1400, t + .45); g.gain.setValueAtTime(.09, t); g.gain.exponentialRampToValueAtTime(.0005, t + .5); o.connect(g); g.connect(MASTER); o.start(t); o.stop(t + .55);
+    [67, 71, 74, 79].forEach((m, i) => blip(440 * 2 ** ((m - 69) / 12), t + .5 + i * .09, .5, 'sawtooth', .045)); },
+};
+// A new question waits until earlier notes have died away, plus a short breath.
+function playPair(a, b, harmonic, gap = .7) {
+  const now = ac().currentTime, t = Math.max(now + .05, quietAt + gap), wait = (t - now) * 1000;
+  if (harmonic) { tone(midiOf(a), t, 1.8); tone(midiOf(b), t, 1.8); return wait + 1900; }
+  tone(midiOf(a), t); tone(midiOf(b), t + .9); return wait + 2000;
+}
+
+/* Chips fly out of a winning card and into the bankroll */
+function chipBurst(card) {
+  const r = card.getBoundingClientRect(), bank = $('hud-bank').getBoundingClientRect();
+  const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  const tx = bank.left + bank.width / 2, ty = bank.top + bank.height / 2;
+  const cols = ['#b8322a', '#2d5f9a', '#1f7a4a', '#1d1712', '#b8322a', '#e6b84c'];
+  const n = 14, t0 = ac().currentTime;
+  for (let i = 0; i < n; i++) {
+    const c = document.createElement('div');
+    c.className = 'flychip'; c.style.setProperty('--c', cols[i % cols.length]);
+    c.style.left = cx + 'px'; c.style.top = cy + 'px';
+    document.body.appendChild(c);
+    const ang = (i / n) * Math.PI * 2 + Math.random() * .4, dist = 70 + Math.random() * 70;
+    const bx = Math.cos(ang) * dist, by = Math.sin(ang) * dist - 30;
+    const delay = 60 + i * 30;
+    c.animate([
+      { transform: 'translate(-50%,-50%) scale(.4) rotate(0deg)', opacity: 0 },
+      { transform: `translate(calc(-50% + ${bx}px), calc(-50% + ${by}px)) scale(1.1) rotate(${200 + i * 30}deg)`, opacity: 1, offset: .35 },
+      { transform: `translate(calc(-50% + ${bx * .9}px), calc(-50% + ${by * .9 + 10}px)) scale(1) rotate(${260 + i * 30}deg)`, opacity: 1, offset: .5 },
+      { transform: `translate(calc(-50% + ${tx - cx}px), calc(-50% + ${ty - cy}px)) scale(.45) rotate(${540 + i * 30}deg)`, opacity: .9 },
+    ], { duration: 1100, delay, easing: 'cubic-bezier(.3,.6,.4,1)', fill: 'forwards' }).onfinish = () => c.remove();
+    // a clink as each chip lands in the pile
+    blip(2300 + Math.random() * 1400, t0 + (delay + 1050) / 1000, .07, 'sine', .05);
+    blip(3400 + Math.random() * 900, t0 + (delay + 1060) / 1000, .05, 'sine', .03);
+  }
+  // a pile-of-chips rattle right as they burst out
+  for (let k = 0; k < 8; k++) { noise(t0 + .05 + k * .035, .03, .07); blip(2800 + Math.random() * 1500, t0 + .05 + k * .04, .06, 'sine', .045); }
+  setTimeout(() => { const b = $('hud-bank'); b.classList.remove('bump'); void b.offsetWidth; b.classList.add('bump'); }, 1150 + n * 30);
+}
+
+/* ---------- Drawing the screen ---------- */
+function dealerSVG() {
+  $('dealer').innerHTML = `
+  <ellipse cx="60" cy="108" rx="44" ry="8" fill="rgba(0,0,0,.35)"/>
+  <path d="M22 112 Q24 74 60 70 Q96 74 98 112 Z" fill="#f1ead8"/>
+  <path d="M22 112 Q24 76 46 71 L56 112 Z" fill="#1d1712"/><path d="M98 112 Q96 76 74 71 L64 112 Z" fill="#1d1712"/>
+  <path d="M50 74 L60 80 L70 74 L66 84 L60 80 L54 84 Z" fill="#b8322a"/>
+  <rect x="26" y="88" width="12" height="7" rx="2" fill="#b8322a" transform="rotate(-12 32 91)"/><rect x="82" y="88" width="12" height="7" rx="2" fill="#b8322a" transform="rotate(12 88 91)"/>
+  <rect x="53" y="58" width="14" height="14" fill="#d9a77c"/>
+  <ellipse cx="60" cy="46" rx="19" ry="21" fill="#e8b98e"/>
+  <circle cx="53" cy="42" r="2.2" fill="#2a1d12"/><circle cx="67" cy="42" r="2.2" fill="#2a1d12"/>
+  <path d="M40 54 Q50 47 60 52 Q70 47 80 54 Q76 60 68 56 Q63 54 60 56 Q57 54 52 56 Q44 60 40 54 Z" fill="#5a3418"/>
+  <ellipse cx="60" cy="27" rx="38" ry="7" fill="#3a2414"/>
+  <path d="M38 27 Q40 6 60 6 Q80 6 82 27 Z" fill="#4a2e18"/><rect x="39" y="20" width="42" height="5" fill="#b8322a"/>`;
+}
+function outlawSVG(o, w = 60) {
+  const hatTop = o.tall ? 6 : 12;
+  return `<svg viewBox="0 0 60 56" width="${w}" aria-hidden="true">
+    <rect x="0" y="0" width="60" height="56" fill="#d8c395"/>
+    <path d="M10 56 Q12 40 30 38 Q48 40 50 56 Z" fill="#6b4a2a"/>
+    ${o.hair ? '<path d="M14 34 Q12 18 30 16 Q48 18 46 34 Q44 44 40 46 L20 46 Q16 44 14 34 Z" fill="#5a3418"/>' : ''}
+    <ellipse cx="30" cy="30" rx="11" ry="12" fill="#e8b98e"/>
+    <path d="M19 33 Q30 46 41 33 L41 40 Q30 50 19 40 Z" fill="${o.band}"/>
+    <circle cx="26" cy="28" r="1.5" fill="#2a1d12"/><circle cx="34" cy="28" r="1.5" fill="#2a1d12"/>
+    ${o.must ? '<path d="M23 34 Q30 30 37 34 Q30 33 23 34 Z" fill="#3a2414"/>' : ''}
+    <ellipse cx="30" cy="19" rx="20" ry="3.6" fill="${o.hat}"/>
+    <path d="M19 19 Q20 ${hatTop} 30 ${hatTop} Q40 ${hatTop} 41 19 Z" fill="${o.hat}"/>
+    <rect x="19.5" y="15.5" width="21" height="2.6" fill="${o.band}"/></svg>`;
+}
+function outlawsInPlay() { return new Set(POOLS[S.diff].map(k => IV[k].out)); }
+function drawPosters() {
+  const live = outlawsInPlay();
+  const html = OUT_ORDER.map((k, i) => {
+    const o = OUTLAWS[k], c = S.caught[k] || 0;
+    const star = c >= 10 ? '🥇' : c >= 3 ? '🥈' : '⭐';
+    const cls = ['poster', live.has(k) ? '' : 'off', c ? 'caught' : '', !live.has(k) || c || S.seen[k] ? '' : 'unknown'].join(' ');
+    return `<div class="${cls}" style="--tilt:${(i % 3 - 1) * 1.5}deg" data-tip="<b>${o.name}</b>, the ${o.iv}<br>${!live.has(k) ? 'Not on this trail. Try a harder difficulty.' : c ? `Lassoed ${c}× at High Noon. ${c >= 10 ? 'Gold star!' : c >= 3 ? 'Silver star. 10 catches for gold.' : '3 catches for a silver star.'}` : 'Still WANTED. Beat this outlaw at High Noon to lasso them.'}">
+      <div class="w">WANTED</div>${outlawSVG(o)}<div class="n">${o.name}</div><div class="i">${o.iv}</div>
+      <div class="stamp">CAPTURED</div><div class="star">${star}</div></div>`;
+  }).join('');
+  $('posters').innerHTML = html; $('home-posters').innerHTML = html;
+  const n = OUT_ORDER.filter(k => S.caught[k]).length;
+  $('poster-count').textContent = `${n} of 12 Interval Outlaws lassoed${getProfile() ? '' : isGuest() ? '. Guests\' posters aren\'t saved.' : '. Sign in to save your posters.'}`;
+}
+function drawHUD() {
+  $('hud-bank').textContent = '$' + S.bank;
+  $('hud-best').textContent = '$' + Math.floor(S.best / 2);
+  $('cashout-amt').textContent = '$' + S.bank;
+  $('cashout').disabled = !(S.phase === 'idle' || S.phase === 'result');
+  $('hud-chip').textContent = '$' + chipVal();
+  $('hud-streak').textContent = '×' + mult() + (S.streak ? ` (${S.streak})` : '');
+  $('hud-hand').textContent = `${Math.min(S.handNo + 1, 10)} / 10`;
+  $('hud-right').textContent = `${S.stats.right} / ${S.stats.total}`;
+  const town = TOWNS[S.town % TOWNS.length];
+  $('eyebrow').textContent = S.mode === 'practice' ? `Practice · ${DIFF_TITLE[S.diff]}` : `Town ${S.town + 1} · ${town} · ${DIFF_TITLE[S.diff]}`;
+  $('town-name').textContent = town;
+  $('town-pop').textContent = 'Pop. ' + (12 + S.town * 7);
+  drawTrail();
+}
+function say(text, who = 'The dealer') { $('who').textContent = who; $('say').innerHTML = text; }
+function toast(text, ms = 2200) { const t = $('toast'); t.innerHTML = text; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), ms); }
+
+function drawHole(face = true) {
+  const h = S.hand, el = $('hole');
+  el.classList.toggle('down', !h || !face);
+  if (!h) { el.querySelector('.face').innerHTML = ''; return; }
+  el.querySelector('.face').innerHTML = `<span class="corner">★</span>${staffSVG({ clef: h.clef, note: h.ref })}
+    <div class="nm">${help('h-letters') ? noteName(h.ref) : ''}</div><div class="tag">${h.harmonic ? 'Both notes at once' : 'Played first'}</div>`;
+}
+function cardFace(c, i, reveal) {
+  const h = S.hand, iv = IV[c.k];
+  const corner = reveal ? `<span class="corner ${c.right ? 'red' : 'blk'}">${SHORT(c.k)}</span>` : `<span class="corner">✦</span>`;
+  const tag = reveal ? `${SHORT(c.k)} ${h.dir > 0 ? '↑' : '↓'} · ${OUTLAWS[iv.out].name}${iv.disg ? ' <i>(disguised)</i>' : ''}` : '';
+  const ear = help('h-ear') && S.phase === 'pick' ? `<button type="button" class="ear" data-ear="${i}" aria-label="Listen to card ${i + 1}">👂</button>` : '';
+  return `${corner}<span class="key">${i + 1}</span><span class="xmark">✗</span>
+    ${staffSVG({ clef: h.clef, ref: h.ref, note: c.n, steps: help('h-steps') })}
+    <div class="nm">${help('h-letters') ? noteName(c.n) : ''}</div><div class="tag">${tag}</div>${ear}`;
+}
+function drawCards(reveal = false) {
+  const h = S.hand, box = $('cards');
+  if (!h) { box.innerHTML = Array.from({ length: cardCount() }, () => `<div class="card down"><div class="inner"><div class="face"></div><div class="back"><span>E</span></div></div></div>`).join(''); return; }
+  box.innerHTML = h.cards.map((c, i) => `<div class="card down" data-i="${i}" role="button" tabindex="-1" aria-label="Card ${i + 1}">
+    <div class="inner"><div class="face">${cardFace(c, i, reveal)}</div><div class="back"><span>E</span></div></div></div>`).join('');
+}
+function refreshFaces(reveal) {
+  document.querySelectorAll('#cards .card').forEach(el => { const i = +el.dataset.i; if (S.hand && !isNaN(i)) el.querySelector('.face').innerHTML = cardFace(S.hand.cards[i], i, reveal); });
+  drawHole(true);
+}
+function flipAll() {
+  const els = [...document.querySelectorAll('#cards .card')];
+  const t = ac().currentTime;
+  els.forEach((el, i) => setTimeout(() => { el.classList.remove('down'); }, 120 + i * 170));
+  els.forEach((_, i) => sfx.flip(t + .12 + i * .17));
+  return 120 + els.length * 170 + 300;
+}
+function drawPiano(hl = {}, flash) {
+  if (!flash) S.pianoHl = hl;
+  const on = isHelped() && $('h-piano').checked && S.hand;
+  $('piano').classList.toggle('on', !!on);
+  if (!on) return;
+  const h = S.hand, ms = [midiOf(h.ref), ...h.cards.map(c => midiOf(c.n))];
+  let lo = Math.min(...ms), hi = Math.max(...ms);
+  lo = lo - ((lo % 12) + 12) % 12; hi = hi + (11 - ((hi % 12) + 12) % 12);
+  if (hi - lo < 23) hi = lo + 23;
+  const whites = []; for (let m = lo; m <= hi; m++) if (![1, 3, 6, 8, 10].includes(((m % 12) + 12) % 12)) whites.push(m);
+  const W = whites.length * 20; let s = `<svg viewBox="0 0 ${W} 70" preserveAspectRatio="xMidYMid meet" aria-label="Piano strip">`;
+  const fill = m => m === hl.press ? '#e98a3c' : m === hl.ref ? 'var(--gold)' : m === hl.card ? 'var(--sky)' : m === hl.ans ? 'var(--win)' : null;
+  whites.forEach((m, i) => { s += `<rect class="pk" data-m="${m}" x="${i * 20}" y="0" width="19" height="68" rx="2" fill="${fill(m) || '#f4ead2'}"/>`; if (m % 12 === 0) s += `<text x="${i * 20 + 9.5}" y="62" font-size="9" text-anchor="middle" fill="#6b5a3e" font-weight="700">C${m / 12 - 1}</text>`; });
+  whites.forEach((m, i) => { if ([1, 3, 6, 8, 10].includes((m + 1) % 12) && m + 1 <= hi) s += `<rect class="pk" data-m="${m + 1}" x="${i * 20 + 13}" y="0" width="13" height="42" rx="2" fill="${fill(m + 1) || '#1d1712'}"/>`; });
+  $('piano').innerHTML = `<div class="ptip">🎹 Play the piano: tap any key to try a note. If it matches a card, that card lights up.</div>` + s + '</svg>';
+}
+// Newbie: the piano strip is playable
+function pressKey(m) {
+  tone(m, ac().currentTime + .01, 1.4, .3);
+  drawPiano({ ...S.pianoHl, press: m }, true);
+  document.querySelectorAll('#cards .card').forEach(el => {
+    const c = S.hand?.cards?.[+el.dataset.i];
+    if (c && midiOf(c.n) === m) { el.classList.remove('match'); void el.offsetWidth; el.classList.add('match'); }
+  });
+  clearTimeout(S.pressT); S.pressT = setTimeout(() => drawPiano(S.pianoHl, true), 450);
+}
+
+/* ---------- Actions area ---------- */
+function setActions(html) { $('actions').innerHTML = html; }
+function syncTray() {
+  if ($('cashout')) $('cashout').disabled = !(S.phase === 'idle' || S.phase === 'result');
+  $('songbook-btn').disabled = !!S.noon && S.phase !== 'result';
+  $('songbook-btn').title = $('songbook-btn').disabled ? 'Hank sits out High Noon' : '';
+  const limit = S.diff === 'hard' || S.diff === 'expert' ? 1 : Infinity;
+  const inHand = S.phase === 'bet' || S.phase === 'pick';
+  $('again').disabled = !(inHand || S.phase === 'flipping') || S.replays >= (S.noon ? 1 : S.mode === 'practice' ? Infinity : limit);
+  $('hank').disabled = !(S.phase === 'pick') || S.noon || S.hankUsed || !S.hand || S.hand.harmonic;
+  const cost = Math.ceil(S.bet / 2) * chipVal();
+  $('hank').textContent = isHelped() || S.mode === 'practice' ? '🎹 Ask Hank (free)' : `🎹 Ask Hank ($${cost})`;
+}
+
+/* ---------- Flow ---------- */
+function startTown() {
+  setSeat('dealer');
+  S.tok++; stopClock();
+  S.handNo = 0; S.noon = null;
+  drawHUD(); drawPosters();
+  S.phase = 'idle'; S.hand = null;
+  drawHole(false); drawCards(); drawPiano(); syncTray();
+  $('clock').classList.remove('on');
+  say(S.mode === 'practice' ? 'Practice table, partner. No chips, no clock. Deal as many hands as you like.' : `Welcome to <b>${TOWNS[S.town % TOWNS.length]}</b>. Six hands, one visit from Crooked Clara, then High Noon. Press <b>Deal</b>.`);
+  setActions(`<button class="go" type="button" data-act="deal">Deal ↵</button>`);
+}
+function nextStep() {
+  if (S.mode === 'practice') return dealRegular();
+  if (S.handNo >= 10) { S.town++; startTown(); return; }
+  if (S.handNo === 6) return introBluff();
+  if (S.handNo === 7 && !S.noon) return introNoon();
+  if (S.handNo >= 7) return dealNoon();
+  dealRegular();
+}
+function dealRegular(forceKey) {
+  setSeat('dealer');
+  S.noon = null; $('clock').classList.remove('on');
+  let key = forceKey;
+  if (S.forceDisguise) { key = pick(['A1', 'A2', 'd4', 'A5', 'd7', 'A6', 'd8']); S.forceDisguise = false; }
+  S.hand = buildHand(key);
+  if (!S.hand) { say('The dealer fumbled the deck. Try another clef.'); return; }
+  S.bet = 0; S.replays = 0; S.hankUsed = false;
+  drawHUD(); drawHole(true); drawCards(); drawPiano({ ref: midiOf(S.hand.ref) });
+  $('hole-lbl').textContent = "Dealer's card"; $('cards-lbl').textContent = 'Which note did you hear?';
+  listenThenBet();
+}
+function listenThenBet() {
+  const tok = ++S.tok;
+  S.phase = 'listen'; syncTray();
+  setActions(`<span class="hint">Listen…</span>`);
+  say(S.hand.harmonic ? 'Here they come <b>together</b>. Listen close.' : `Here's my card, <b>${nameOf(S.hand.ref)}</b>… and here's the mystery note.`);
+  sfx.flip(ac().currentTime);
+  const ms = playPair(S.hand.ref, S.hand.ans, S.hand.harmonic);
+  setTimeout(() => {
+    if (tok !== S.tok) return;
+    S.bet = 1;
+    reveal();
+  }, ms);
+}
+function reveal() {
+  const tok = S.tok;
+  S.phase = 'flipping'; syncTray();
+  setActions(`<span class="hint">${S.noon ? 'Draw!' : 'Cards coming…'}</span>`);
+  const ms = flipAll();
+  setTimeout(() => {
+    if (tok !== S.tok) return;
+    S.phase = 'pick'; syncTray(); refreshFaces(false);
+    document.querySelectorAll('#cards .card').forEach(el => el.classList.add('pickable'));
+    say(S.noon ? `<b>${OUTLAWS[S.noon.out].name}</b> is reaching for the deck… pick fast! (You get <b>one</b> Again, Dealer.)` : 'Pick the card you heard.');
+    setActions(`<span class="hint">Click a card, or press 1–4${help('h-ear') ? '. Tap 👂 to hear any card with the hole note' : ''}.</span>`);
+    if (S.noon) startClock();
+  }, ms);
+}
+function startClock() {
+  const secs = NOON_SECS;
+  let left = secs; const t0 = performance.now();
+  $('clock').classList.add('on'); $('clock-n').textContent = left;
+  const bar = $('timebar');
+  clearInterval(S.clockT);
+  S.clockT = setInterval(() => {
+    const el = (performance.now() - t0) / 1000;
+    bar.style.width = Math.min(100, el / secs * 100) + '%';
+    const nl = Math.ceil(secs - el);
+    if (nl !== left) { left = nl; $('clock-n').textContent = Math.max(0, left); $('clock').classList.toggle('hot', left <= 2); sfx.tick(); }
+    if (el >= secs) { stopClock(); choose(-1); }
+  }, 50);
+}
+function stopClock() { clearInterval(S.clockT); $('timebar').style.width = '0'; $('clock').classList.remove('hot'); }
+
+function choose(i) {
+  if (S.phase !== 'pick') return;
+  stopClock();
+  S.phase = 'result'; syncTray();
+  const h = S.hand, right = i >= 0 && h.cards[i].right, iv = IV[h.key], outl = OUTLAWS[iv.out];
+  if (!S.seen[iv.out]) { S.seen[iv.out] = 1; savePosters(); }
+  document.querySelectorAll('#cards .card').forEach(el => {
+    el.classList.remove('pickable'); const j = +el.dataset.i;
+    if (h.cards[j].right) el.classList.add('right');
+    if (j === i) el.classList.add('picked', right ? 'right' : 'wrong');
+    if (j === i && right) { el.classList.add('pop'); if (!S.noon && S.mode !== 'practice') chipBurst(el); }
+  });
+  refreshFaces(true);
+  drawPiano({ ref: midiOf(h.ref), ans: midiOf(h.ans) });
+  // stats
+  const st = S.stats; st.total++; const ivKey = SHORT(h.key) + (h.harmonic ? ' (together)' : h.dir > 0 ? ' ↑' : ' ↓');
+  st.byIv[ivKey] = st.byIv[ivKey] || [0, 0, outl.name]; st.byIv[ivKey][1]++;
+  st.byKey[h.key] = st.byKey[h.key] || [0, 0]; st.byKey[h.key][1]++;
+  if (right) { st.right++; st.byIv[ivKey][0]++; st.byKey[h.key][0]++; }
+  else if (i >= 0) { const m = `${IV[h.cards[i].k].num === iv.num ? IV[h.cards[i].k].name : ord(IV[h.cards[i].k].num)} when it was a ${iv.disg ? iv.name : (IV[h.cards[i].k].num === iv.num ? iv.name : ord(iv.num))}`; st.mix[m] = (st.mix[m] || 0) + 1; }
+
+  const dirTxt = h.harmonic ? 'together' : h.dir > 0 ? 'up' : 'down';
+  let line = right ? `<b>${cap(iv.name)} ${dirTxt}!</b> That's ${outl.name}.` : i < 0 ? `Too slow, partner! It was a <b>${iv.name} ${dirTxt}</b>.` : `Nope. That was a <b>${iv.name} ${dirTxt}</b>, ${outl.name}.`;
+  if (iv.disg) line = `<b>${cap(iv.name)}!</b> That's ${outl.name} <b>in disguise</b>. It sounds just like a ${IV[iv.out]?.name || outl.iv}, but it's spelled <b>${nameOf(h.ans)}</b>.`;
+
+  if (S.mode === 'practice') {
+    if (right) { S.streak++; sfx.win(); } else { S.streak = 0; sfx.lose(); }
+  } else if (S.noon) {
+    S.noon.done++; if (right) S.noon.won++;
+    if (right) { S.streak++; sfx.win(); } else { S.streak = 0; sfx.lose(); }
+  } else if (right) {
+    const win = S.bet * chipVal() * mult();
+    S.streak++; S.bank += win; sfx.win();
+    line += ` You win <b>$${win}</b>.`;
+  } else {
+    S.streak = 0; S.bank -= S.bet * chipVal(); sfx.lose();
+    line += ` You lose $${S.bet * chipVal()}.`;
+  }
+  st.bestStreak = Math.max(st.bestStreak, S.streak);
+  S.best = Math.max(S.best, S.bank);
+  say(line);
+  { const t = ac().currentTime + (right ? 1.25 : .7); if (h.harmonic) { tone(midiOf(h.ref), t); tone(midiOf(h.ans), t); } else { tone(midiOf(h.ref), t); tone(midiOf(h.ans), t + .7); } }
+  S.handNo++;
+  drawHUD();
+  afterHand();
+}
+function afterHand() {
+  if (S.mode === 'practice') {
+    const tok = S.tok;
+    setActions(`<span class="hint">&nbsp;</span>`);
+    setTimeout(() => { if (tok === S.tok && S.phase === 'result') setActions(`<button class="go" type="button" data-act="next">Next hand ↵</button>`); }, Math.max(600, (quietAt - ac().currentTime) * 1000));
+    return;
+  }
+  if (S.noon && S.noon.done >= 3) {
+    $('clock').classList.remove('on');
+    const k = S.noon.out, o = OUTLAWS[k];
+    if (S.noon.won >= 2) {
+      S.caught[k] = (S.caught[k] || 0) + 1; savePosters(); const bounty = 5 * (S.town + 1) * chipVal();
+      S.bank += bounty; S.best = Math.max(S.best, S.bank); S.stats.lassoed.push(o.name);
+      setTimeout(() => { sfx.lasso(); toast(`🤠 Lassoed ${o.name}! Bounty $${bounty}`); say(`You lassoed <b>${o.name}</b>! The sheriff pays a <b>$${bounty}</b> bounty.`); drawPosters(); drawHUD(); }, 1600);
+    } else {
+      setTimeout(() => { sfx.lose(); say(`<b>${o.name}</b> got away, still WANTED. They might turn up in a later town.`); }, 1600);
+    }
+    setTimeout(() => {
+      const nextChip = 10 + 5 * (S.town + 1);
+      say(`${S.noon.won >= 2 ? 'Nice work. ' : ''}<b>Press your luck?</b> Cash out now with <b>$${S.bank}</b>, or ride on to <b>${TOWNS[(S.town + 1) % TOWNS.length]}</b>, where every chip is worth <b>$${nextChip}</b>. Go bust and you only keep half your best ($${Math.floor(S.best / 2)}).`);
+      setActions(`<button type="button" data-act="cashout">💰 Cash out $${S.bank}</button><button class="go" type="button" data-act="next">Ride on 🐎 ↵</button>`);
+      drawHUD();
+    }, 3400);
+    return;
+  }
+  if (S.bank < chipVal()) {
+    if (S.diff === 'newbie' && S.town === 0) { S.bank = chipVal(); drawHUD(); setTimeout(() => say("The house spots you a chip, greenhorn. Nobody goes bust in the first town."), 1500); }
+    else { S.phase = 'over'; setTimeout(() => { say("You're <b>busted</b>, partner."); endRun(true); }, 1500); return; }
+  }
+  setActions(`<span class="hint">&nbsp;</span>`);
+  const tok = S.tok;
+  const nextLbl = S.handNo === 6 ? 'Here comes Clara…' : S.handNo === 7 ? 'It\'s High Noon' : 'Next hand';
+  const tipAttr = S.handNo === 6 ? ` data-tip="${TIPS.clara}"` : S.handNo === 7 ? ` data-tip="${TIPS.noon}"` : '';
+  setTimeout(() => {
+    if (tok !== S.tok || S.phase !== 'result') return;
+    setActions(`<button class="go" type="button" data-act="next"${tipAttr}>${nextLbl} ↵</button>`);
+  }, Math.max(600, (quietAt - ac().currentTime) * 1000));
+}
+const cap = s => s[0].toUpperCase() + s.slice(1);
+const ord = n => ({ 1: 'unison', 2: '2nd', 3: '3rd', 4: '4th', 5: '5th', 6: '6th', 7: '7th', 8: 'octave' })[n];
+
+
+/* Call the Bluff */
+function dealBluff() {
+  S.tok++; S.noon = null; $('clock').classList.remove('on'); setSeat('clara'); S.phase = 'bluff';
+  const h = buildHand(null, { noHarm: true });
+  const cheat = Math.random() < .5;
+  const off = cheat ? pick([-2, -1, 1, 2]) : 0;
+  S.hand = { ...h, bluff: { cheat, off } };
+  syncTray();
+  drawHole(true);
+  $('hole-lbl').textContent = "Clara's first card"; $('cards-lbl').textContent = 'Second card: does it match what she plays?';
+  $('cards').innerHTML = `<div class="card" data-i="0"><div class="inner"><div class="face"><span class="corner">✦</span>${staffSVG({ clef: h.clef, ref: h.ref, note: h.ans, steps: help('h-steps') })}<div class="nm">${help('h-letters') ? noteName(h.ans) : ''}</div><div class="tag"></div></div><div class="back"><span>E</span></div></div></div>`;
+  say("Well now, <b>Crooked Clara</b> is sitting in. She'll play these two cards… if she's honest. Fair, or <b>Cheat</b>?", 'Crooked Clara');
+  setActions(`<button type="button" data-act="bluffplay">♪ Play it, Clara</button><button class="go" type="button" data-bluff="fair">Fair</button><button class="red" type="button" data-bluff="cheat">Cheat!</button>`);
+  setTimeout(bluffPlay, 500);
+  drawPiano({ ref: midiOf(h.ref) });
+}
+function bluffPlay() {
+  const h = S.hand, t = ac().currentTime + .05;
+  tone(midiOf(h.ref), t); tone(midiOf(h.ans) + h.bluff.off, t + .9);
+}
+function bluffCall(saysCheat) {
+  if (S.phase !== 'bluff') return;
+  S.phase = 'result';
+  const h = S.hand, right = saysCheat === h.bluff.cheat, cv = chipVal();
+  S.stats.bluff[1]++; if (right) S.stats.bluff[0]++;
+  let line;
+  if (right && h.bluff.cheat) { S.bank += 2 * cv; S.streak++; sfx.win(); line = `Caught her! She played it <b>${Math.abs(h.bluff.off) === 1 ? 'a half step' : 'a whole step'} ${h.bluff.off > 0 ? 'high' : 'low'}</b>. You win <b>$${2 * cv}</b> (double).`; }
+  else if (right) { S.bank += cv; S.streak++; sfx.win(); line = `Fair and square. You win <b>$${cv}</b>.`; }
+  else if (h.bluff.cheat) { S.bank -= cv; S.streak = 0; sfx.lose(); line = `She cheated! The note was <b>${Math.abs(h.bluff.off) === 1 ? 'a half step' : 'a whole step'} ${h.bluff.off > 0 ? 'high' : 'low'}</b>. You lose $${cv}.`; }
+  else { S.bank -= cv; S.streak = 0; sfx.lose(); line = `That was honest, partner. You lose $${cv}.`; }
+  S.best = Math.max(S.best, S.bank);
+  say(line, 'Crooked Clara');
+  S.handNo++; drawHUD(); afterHand();
+}
+
+/* Mini-game ceremonies: a big entrance, a moment to take it in, then the player starts it */
+function claraSVG() {
+  return `<svg viewBox="0 0 120 120" aria-hidden="true">
+    <path d="M22 120 Q26 86 60 82 Q94 86 98 120 Z" fill="#6a2a5a"/>
+    <path d="M44 84 L60 104 L76 84" fill="#f1ead8"/>
+    <path d="M30 70 Q24 40 40 28 Q60 16 80 28 Q96 40 90 70 Q86 82 78 80 L42 80 Q34 82 30 70 Z" fill="#7a3a1a"/>
+    <rect x="53" y="70" width="14" height="14" fill="#d9a77c"/>
+    <ellipse cx="60" cy="56" rx="18" ry="20" fill="#e8b98e"/>
+    <path d="M48 52 Q52 49 56 52" stroke="#2a1d12" stroke-width="2.4" fill="none"/><path d="M64 52 Q68 49 72 52" stroke="#2a1d12" stroke-width="2.4" fill="none"/>
+    <path d="M52 66 Q60 71 69 64" stroke="#b8322a" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+    <circle cx="70" cy="60" r="1.2" fill="#2a1d12"/><circle cx="42" cy="62" r="2.4" fill="#e6b84c"/>
+    <ellipse cx="60" cy="36" rx="34" ry="7" fill="#4a1a4a"/><path d="M42 36 Q44 18 60 18 Q76 18 78 36 Z" fill="#5a2050"/>
+    <path d="M74 22 Q96 2 104 14 Q92 14 86 26 Z" fill="#c070c0"/><path d="M76 24 Q100 10 106 24 Q94 22 86 30 Z" fill="#e090d0"/>
+    <g transform="translate(78 92) rotate(-20)"><rect x="0" y="0" width="16" height="22" rx="2" fill="#f4ead2" stroke="#2a1d12"/><rect x="8" y="-2" width="16" height="22" rx="2" fill="#f4ead2" stroke="#2a1d12" transform="rotate(14 8 10)"/><rect x="16" y="-2" width="16" height="22" rx="2" fill="#b8322a" stroke="#f4ead2" transform="rotate(28 16 10)"/></g>
+    <ellipse cx="80" cy="100" rx="6" ry="5" fill="#e8b98e"/></svg>`;
+}
+function showIntro(html, btnLabel, onGo, sting) {
+  const el = $('intro');
+  S.tok++; // cancel any half-finished hand's timers
+  $('intro-card').innerHTML = html + `<button type="button" class="go big" id="intro-go" disabled>${btnLabel}</button>`;
+  el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');
+  S.phase = 'intro'; syncTray(); setActions('');
+  sting();
+  setTimeout(() => { const b = $('intro-go'); if (b) { b.disabled = false; b.focus(); } }, 1600);
+  $('intro-go').onclick = () => {
+    el.classList.remove('on'); ac();
+    // fade out the intro music so it never overlaps the first hand
+    if (S.stingBus) { const b = S.stingBus; b.gain.setTargetAtTime(0, ac().currentTime, .12); setTimeout(() => b.disconnect(), 900); S.stingBus = null; }
+    setTimeout(onGo, 450);
+  };
+}
+const stings = {
+  noon: () => { // one bell, then the showdown whistle over a low drone: D G D G D … B♭ C … G
+    const c = ac(), t0 = c.currentTime + .1, bus = c.createGain();
+    bus.connect(MASTER); S.stingBus = bus;
+    const hz = m => 440 * 2 ** ((m - 69) / 12);
+    // the bell
+    [[196, .15], [392, .06], [523, .035], [784, .02]].forEach(([f, v]) => {
+      const o = c.createOscillator(), g = c.createGain(); o.frequency.value = f;
+      g.gain.setValueAtTime(v, t0); g.gain.exponentialRampToValueAtTime(.0005, t0 + 2.6);
+      o.connect(g); g.connect(bus); o.start(t0); o.stop(t0 + 2.7);
+    });
+    // an ocarina-like whistle: a little scoop into each note, vibrato that grows on long notes
+    const whistle = (m, t, d, v = .11, fall = 0) => {
+      const f = hz(m), o = c.createOscillator(), o2 = c.createOscillator(), g = c.createGain(), g2 = c.createGain();
+      const lfo = c.createOscillator(), lg = c.createGain();
+      o.type = 'sine'; o2.type = 'triangle';
+      o.frequency.setValueAtTime(f * .955, t); o.frequency.exponentialRampToValueAtTime(f, t + .05);
+      o2.frequency.setValueAtTime(f * 2 * .955, t); o2.frequency.exponentialRampToValueAtTime(f * 2, t + .05);
+      if (fall) { // portamento: hold the note, then slide down
+        const k = 2 ** (-fall / 12);
+        o.frequency.setValueAtTime(f, t + d * .62); o.frequency.exponentialRampToValueAtTime(f * k, t + d);
+        o2.frequency.setValueAtTime(f * 2, t + d * .62); o2.frequency.exponentialRampToValueAtTime(f * 2 * k, t + d);
+      }
+      lfo.frequency.value = 5.6; lg.gain.setValueAtTime(0, t); lg.gain.linearRampToValueAtTime(d > .5 ? f * .018 : f * .004, t + Math.min(d, .5));
+      lfo.connect(lg); lg.connect(o.frequency);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + .03); g.gain.setValueAtTime(v * .92, t + d * .75); g.gain.exponentialRampToValueAtTime(.0005, t + d + .12);
+      g2.gain.value = .08;
+      o.connect(g); o2.connect(g2); g2.connect(g); g.connect(bus);
+      [o, o2, lfo].forEach(x => { x.start(t); x.stop(t + d + .15); });
+    };
+    const mel = [[74, .17], [79, .17], [74, .17], [79, .17], [74, 1.05, 2], [null, .3], [70, .8], [72, .8], [67, 3.0]];
+    let t = t0 + 1.0;
+    mel.forEach(([m, d, fall]) => { if (m) whistle(m, t, d * .95, .11, fall); t += d; });
+    // a low G drone with a soft open fifth underneath
+    const end = t + .3;
+    [[43, .05], [50, .03]].forEach(([m, v]) => {
+      const o = c.createOscillator(), lp = c.createBiquadFilter(), g = c.createGain();
+      o.type = 'sawtooth'; o.frequency.value = hz(m); lp.type = 'lowpass'; lp.frequency.value = 420;
+      g.gain.setValueAtTime(0, t0 + .9); g.gain.linearRampToValueAtTime(v, t0 + 2.2); g.gain.setValueAtTime(v, end - .6); g.gain.exponentialRampToValueAtTime(.0005, end + .4);
+      o.connect(lp); lp.connect(g); g.connect(bus); o.start(t0 + .9); o.stop(end + .5);
+    });
+    // a soft drum thump under the long notes
+    [t0 + 1.0 + .68, t0 + 1.0 + 2.83].forEach(w => {
+      const o = c.createOscillator(), g = c.createGain(); o.frequency.setValueAtTime(110, w); o.frequency.exponentialRampToValueAtTime(50, w + .25);
+      g.gain.setValueAtTime(.18, w); g.gain.exponentialRampToValueAtTime(.0005, w + .35); o.connect(g); g.connect(bus); o.start(w); o.stop(w + .4);
+    });
+  },
+  bluff: () => { // sneaky tiptoe down, then a sly little trill
+    const t = ac().currentTime + .1;
+    [71, 70, 69, 68, 67, 66, 65, 64].forEach((m, i) => blip(440 * 2 ** ((m - 69) / 12), t + i * .16, .12, 'triangle', .1));
+    [76, 77, 76, 77, 76].forEach((m, i) => blip(440 * 2 ** ((m - 69) / 12), t + 1.45 + i * .06, .09, 'square', .035));
+    blip(440 * 2 ** ((64 - 69) / 12), t + 1.8, .6, 'triangle', .1);
+  },
+};
+function setSeat(who) {
+  const d = $('dealer');
+  if (who === 'clara') { d.setAttribute('viewBox', '0 0 120 120'); d.innerHTML = claraSVG().replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, ''); }
+  else if (d.getAttribute('viewBox') !== '0 0 120 112') { d.setAttribute('viewBox', '0 0 120 112'); dealerSVG(); }
+}
+function introBluff() {
+  stopClock(); $('clock').classList.remove('on');
+  showIntro(`<div class="intro-kicker">A stranger sits down…</div>
+    <div class="intro-portrait clara">${claraSVG()}</div>
+    <h2 class="intro-title">Crooked Clara<br><span>sits in</span></h2>
+    <p class="intro-rules">She'll show you <b>two notes</b> on the staff and play them. But Clara's a cheat about half the time: her second note might be a <b>half or whole step off</b>.<br>Call it <b>Fair</b> or <b>Cheat!</b> Catch her cheating and you win <b>double</b>.</p>`,
+    'Deal me in, Clara 🃏 ↵', dealBluff, stings.bluff);
+  say('Hold on to your hat, partner…', 'The dealer');
+}
+function introNoon() {
+  stopClock();
+  const live = [...outlawsInPlay()], fresh = live.filter(k => !S.caught[k]);
+  const out = pick(fresh.length ? fresh : live), o = OUTLAWS[out];
+  S.noon = { out, keys: POOLS[S.diff].filter(k => IV[k].out === out && !IV[k].disg), done: 0, won: 0 };
+  const bounty = 5 * (S.town + 1) * chipVal(), secs = NOON_SECS;
+  S.seen[out] = 1; drawPosters();
+  showIntro(`<div class="intro-kicker">The clock strikes twelve…</div>
+    <h2 class="intro-title noon">High Noon</h2>
+    <div class="intro-poster"><div class="w">WANTED</div>${outlawSVG(o, 150)}<div class="n">${o.name}</div><div class="i">the ${o.iv}</div><div class="b">Bounty $${bounty}</div></div>
+    <p class="intro-rules"><b>${o.name}</b> rides into ${TOWNS[S.town % TOWNS.length]}. Three quick draws, every one a <b>${o.iv}</b>.<br>Pick before the clock runs out (<b>${secs} seconds</b>). You can hear it <b>one more time</b> with Again, Dealer. Win <b>2 of 3</b> to lasso the outlaw and collect the bounty.</p>`,
+    "Show 'em who's boss 🤠 ↵", dealNoon, stings.noon);
+  say(`Folks are clearing the street…`, 'The dealer');
+}
+
+/* High Noon */
+function dealNoon() {
+  setSeat('dealer');
+  if (!S.noon) {
+    const live = [...outlawsInPlay()];
+    const fresh = live.filter(k => !S.caught[k]);
+    const out = pick(fresh.length ? fresh : live);
+    const keys = POOLS[S.diff].filter(k => IV[k].out === out && !IV[k].disg);
+    S.noon = { out, keys, done: 0, won: 0 };
+  }
+  $('clock').classList.add('on'); $('clock-n').textContent = NOON_SECS;
+  S.hand = buildHand(pick(S.noon.keys)); S.bet = 2; S.replays = 0; S.hankUsed = false;
+  drawHUD(); drawHole(true); drawCards(); drawPiano({ ref: midiOf(S.hand.ref) });
+  $('hole-lbl').textContent = "Dealer's card"; $('cards-lbl').textContent = `Showdown ${S.noon.done + 1} of 3 · ${OUTLAWS[S.noon.out].name}`;
+  listenThenBet();
+}
+
+/* Hank */
+function askHank() {
+  const h = S.hand; if (!h || S.hankUsed) return;
+  const iv = IV[h.key], dir = h.dir > 0 ? 'up' : 'down', song = HANK[dir][iv.out];
+  if (!isHelped() && S.mode !== 'practice') { const cost = Math.ceil(S.bet / 2) * chipVal(); S.bank -= cost; drawHUD(); }
+  S.hankUsed = true; syncTray();
+  const t0 = ac().currentTime + .1, base = midiOf(h.ref);
+  if (song) {
+    let t = t0; song[1].forEach((o, i) => { tone(base + o, t, song[2][i] + .4, .26); t += song[2][i]; });
+    say(`<i>♪ plink plonk ♪</i> That one goes like <b>${song[0]}</b>.`, 'Honky-Tonk Hank');
+  } else {
+    const m2 = midiOf(h.ans); [0, 1, 2].forEach(r => { tone(base, t0 + r * 1.6, 1.4, .24); tone(m2, t0 + r * 1.6 + .75, 1.4, .24); });
+    say(`<i>Hmm-hmm, hmm-hmm…</i> Hank hums it nice and slow. (The song for this one is still to be picked.)`, 'Honky-Tonk Hank');
+  }
+}
+
+/* ---------- Ending a run: the Sheriff's Report, and the score posts ---------- */
+let lastRun = null, savedRunId = null, saving = false;
+function endRun(busted) {
+  stopClock(); S.tok++; S.phase = 'over'; syncTray();
+  const st = S.stats;
+  lastRun = { score: busted ? Math.floor(S.best / 2) : S.bank, busted, hands: st.total, acc: st.total ? Math.round(st.right / st.total * 100) : 0,
+    town: S.town + 1, outlaws: st.lassoed.length, diff: S.diff, clef: S.clef, wasGuest: !getProfile() };
+  savedRunId = null;
+  showReport();
+  if (getProfile() && st.total > 0) saveRun();
+}
+function endPractice() { stopClock(); S.tok++; S.phase = 'over'; syncTray(); lastRun = null; showReport(); }
+// intervals answered below 80% this run, for "Practice these"
+function weakKeys() { return Object.entries(S.stats.byKey).filter(([, [r, t]]) => t && r / t < .8).map(([k]) => k); }
+function showReport() {
+  const st = S.stats, pct = st.total ? Math.round(st.right / st.total * 100) : 0, run = lastRun, practice = S.mode === 'practice';
+  const rows = Object.entries(st.byIv).sort((a, b) => a[1][0] / a[1][1] - b[1][0] / b[1][1]).map(([k, [r, t, nm]]) => `<tr><td>${nm} (${k})</td><td class="num">${r}/${t}</td></tr>`).join('') || '<tr><td>No hands yet</td><td></td></tr>';
+  const mix = Object.entries(st.mix).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([m, n]) => `<p>You picked a ${m} <b>${n}×</b>.</p>`).join('') || '<p>No mix-ups. Sharp ears!</p>';
+  const mins = Math.max(1, Math.round((Date.now() - st.t0) / 60000));
+  const head = practice
+    ? `<p>Practice at the <b>${DIFF_TITLE[S.diff]}</b> table · ${mins} min.</p>
+       <table><tr><td>Hands</td><td class="num">${st.total}</td></tr><tr><td>Accuracy</td><td class="num">${pct}%</td></tr><tr><td>Best streak</td><td class="num">${st.bestStreak}</td></tr></table>`
+    : `<p>${run.busted ? 'Busted in' : 'Cashed out in'} <b>${TOWNS[S.town % TOWNS.length]}</b> (Town ${S.town + 1}) at the <b>${DIFF_TITLE[S.diff]}</b> table.</p>
+       <table><tr><td><b>Your score</b> ${run.busted ? '(half your best, because you went bust)' : '(what you cashed out with)'}</td><td class="num">$${run.score}</td></tr><tr><td>Best bankroll</td><td class="num">$${S.best}</td></tr><tr><td>Hands</td><td class="num">${st.total}</td></tr><tr><td>Accuracy</td><td class="num">${pct}%</td></tr><tr><td>Best streak</td><td class="num">${st.bestStreak}</td></tr><tr><td>Outlaws lassoed</td><td class="num">${st.lassoed.join(', ') || 'none yet'}</td></tr><tr><td>Called Clara's bluff</td><td class="num">${st.bluff[0]}/${st.bluff[1]}</td></tr></table>
+       <div class="save" id="save-line"></div>`;
+  const weak = weakKeys();
+  $('report').innerHTML = `<h2>Sheriff's Report</h2>${head}
+    <h3>Each outlaw</h3><table>${rows}</table>
+    <h3>Mix-ups</h3>${mix}
+    <div class="btns">
+      <button class="go" type="button" data-act="again-run">${practice ? 'Keep practicing' : 'Ride again 🐎'}</button>
+      ${weak.length ? `<button type="button" data-act="practice-these" data-tip="Practice only the intervals you got less than 80% right: ${weak.map(k => SHORT(k)).join(', ')}">🎯 Practice these (${weak.length})</button>` : ''}
+      ${practice ? '' : '<button type="button" data-act="board">🏆 Leaderboard</button>'}
+      <button type="button" data-act="home">Back to the saloon door</button>
+    </div>`;
+  $('overlay').classList.add('on');
+  if (!practice) syncSaveLine();
+}
+function syncSaveLine() {
+  const el = $('save-line'); if (!el || !lastRun) return;
+  const p = getProfile();
+  if (savedRunId) return;
+  if (!p) { el.className = 'save'; el.innerHTML = isGuest() ? "Guest run: this score isn't saved. <button type=\"button\" data-act=\"signin\">Sign in for next time</button>" : 'Sign in to save your scores. <button type="button" data-act="signin">Sign in</button>'; return; }
+  if (!lastRun.hands) { el.className = 'save'; el.textContent = 'No hands were played, so nothing was posted.'; return; }
+  if (lastRun.wasGuest) { el.className = 'save'; el.textContent = `Signed in as ${displayName(p)}. That was a guest run, so it wasn't saved; your next run posts automatically.`; return; }
+  el.className = 'save'; el.textContent = `Posting as ${displayName(p)}${p.classCode ? ' to ' + p.className + ' and the World board' : ' to the World board'}…`;
+}
+function startRun() {
+  Object.assign(S, { town: 0, bank: 100, best: 100, streak: 0, stats: freshStats(), handNo: 0, noon: null });
+  lastRun = null; savedRunId = null;
+  document.body.classList.toggle('practice', S.mode === 'practice');
+  $('overlay').classList.remove('on');
+  go('game'); drawPosters(); startTown();
+}
+function practiceThese() {
+  const weak = weakKeys(); if (!weak.length) return;
+  S.mode = 'practice'; S.practice = { ivs: weak, dir: S.diff === 'newbie' || S.diff === 'easy' ? 'up' : 'both', sound: 'mel' };
+  saveSettings(); drawHome(); startRun();
+  toast(`🎯 Practicing ${weak.map(k => SHORT(k)).join(', ')}`, 3200);
+}
+
+/* ---------- Screens ---------- */
+const VIEWS = ['home', 'game', 'songbook', 'board'];
+let prevView = 'home';
+const view = () => VIEWS.find(v => !$(v).hidden);
+function go(v) {
+  const cur = view();
+  if ((v === 'songbook' || v === 'board') && cur !== v) prevView = cur;
+  VIEWS.forEach(x => { $(x).hidden = x !== v; });
+  window.scrollTo(0, 0); hideTip();
+  if (v === 'home') { drawPosters(); updateWho(); }
+}
+function goHome() { stopClock(); S.tok++; S.phase = 'idle'; $('overlay').classList.remove('on'); $('intro').classList.remove('on'); if (S.stingBus) { S.stingBus.disconnect(); S.stingBus = null; } go('home'); }
+
+/* ---------- Start screen ---------- */
+const DIFF_TITLE = { newbie: 'Newbie', easy: 'Easy', medium: 'Medium', hard: 'Hard', expert: 'Expert' };
+const DIFF_DESC = {
+  newbie: 'Major 2nd, major 3rd, 5th and octave, going up. With helpers: letter names, a playable piano and more.',
+  easy: 'The same four intervals going up, with no helpers.',
+  medium: 'Adds minor 2nds and 3rds, 4ths and major 6ths, going up and down.',
+  hard: 'Every interval in the octave: the tritone, minor 6th and both 7ths.',
+  expert: 'Everything, plus outlaws in disguise and both notes at once.',
+};
+const PRACTICE_KEYS = ['m2', 'M2', 'm3', 'M3', 'P4', 'A4', 'd5', 'P5', 'm6', 'M6', 'm7', 'M7', 'P8'];
+const DISGUISE_KEYS = ['A1', 'A2', 'd4', 'A5', 'd7', 'A6', 'd8'];
+const SETTINGS_KEY = 'earshot_settings_v1';
+function saveSettings() {
+  try { localStorage.setItem(SETTINGS_KEY, JSON.stringify({ diff: S.diff, clef: S.clef, mode: S.mode, practice: S.practice, helpers: ['h-letters', 'h-ear', 'h-steps', 'h-piano'].map(id => $(id).checked) })); } catch {}
+}
+function loadSettings() {
+  let d = null; try { d = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null'); } catch {}
+  if (!d) return;
+  if (DIFF_TITLE[d.diff]) S.diff = d.diff;
+  if (['treble', 'bass', 'mixed'].includes(d.clef)) S.clef = d.clef;
+  if (['trail', 'practice'].includes(d.mode)) S.mode = d.mode;
+  if (d.practice && Array.isArray(d.practice.ivs)) { const ivs = d.practice.ivs.filter(k => IV[k]); if (ivs.length) S.practice = { ivs, dir: ['up', 'down', 'both'].includes(d.practice.dir) ? d.practice.dir : 'up', sound: ['mel', 'harm', 'both'].includes(d.practice.sound) ? d.practice.sound : 'mel' }; }
+  if (Array.isArray(d.helpers)) ['h-letters', 'h-ear', 'h-steps', 'h-piano'].forEach((id, i) => { if (typeof d.helpers[i] === 'boolean') $(id).checked = d.helpers[i]; });
+}
+function segHTML(items, cur) { return items.map(([v, l]) => `<button type="button" data-v="${v}" aria-pressed="${cur === v}">${l}</button>`).join(''); }
+function drawHome() {
+  $('diffs').innerHTML = Object.keys(DIFF_TITLE).map(k => `<button type="button" data-diff="${k}" aria-pressed="${S.diff === k}"><b>${DIFF_TITLE[k]}</b><small>${DIFF_DESC[k]}</small></button>`).join('');
+  $('seg-clef').innerHTML = segHTML([['treble', 'Treble'], ['bass', 'Bass'], ['mixed', 'Mixed']], S.clef);
+  $('seg-mode').innerHTML = segHTML([['trail', '🤠 The trail'], ['practice', '🎯 Practice']], S.mode);
+  $('seg-dir').innerHTML = segHTML([['up', 'Up ↑'], ['down', 'Down ↓'], ['both', 'Both']], S.practice.dir);
+  $('seg-sound').innerHTML = segHTML([['mel', 'One after the other'], ['harm', 'Both at once'], ['both', 'Mixed']], S.practice.sound);
+  const keys = PRACTICE_KEYS.concat(S.diff === 'expert' || S.practice.ivs.some(k => IV[k].disg) ? DISGUISE_KEYS : []);
+  $('ivpick').innerHTML = keys.map(k => `<label><input type="checkbox" data-iv="${k}" ${S.practice.ivs.includes(k) ? 'checked' : ''}>${SHORT(k)} · ${IV[k].name}</label>`).join('');
+  $('helpers').hidden = S.diff !== 'newbie';
+  $('practice-set').hidden = S.mode !== 'practice';
+  $('start-btn').textContent = S.mode === 'practice' ? 'Start practice 🎯' : 'Deal me in 🤠';
+  $('mode-note').textContent = S.mode === 'practice'
+    ? 'No chips, no clock and no leaderboard. Pick the intervals you want to drill.'
+    : 'Six hands a town, a visit from Crooked Clara, then High Noon. Your score posts to the leaderboard when you cash out or go bust, if you\'re signed in.';
+}
+$('home').addEventListener('click', e => {
+  const d = e.target.closest('[data-diff]'), sg = e.target.closest('.seg button');
+  if (d) {
+    S.diff = d.dataset.diff;
+    if (S.mode === 'practice') S.practice.ivs = [...new Set(POOLS[S.diff].filter(k => !IV[k].disg))];
+    if (S.diff === 'newbie' || S.diff === 'easy') S.practice.dir = 'up';
+  } else if (sg) {
+    const id = sg.parentElement.id, v = sg.dataset.v;
+    if (id === 'seg-clef') S.clef = v;
+    if (id === 'seg-mode') S.mode = v;
+    if (id === 'seg-dir') S.practice.dir = v;
+    if (id === 'seg-sound') S.practice.sound = v;
+  } else return;
+  saveSettings(); drawHome(); drawPosters();
+});
+$('ivpick').addEventListener('change', () => {
+  const ivs = [...$('ivpick').querySelectorAll('input:checked')].map(i => i.dataset.iv);
+  if (!ivs.length) { toast('Pick at least one interval'); drawHome(); return; }
+  S.practice.ivs = ivs; saveSettings();
+});
+['h-letters', 'h-ear', 'h-steps', 'h-piano'].forEach(id => $(id).addEventListener('change', saveSettings));
+$('start-btn').addEventListener('click', () => { ac(); startRun(); });
+$('board-btn').addEventListener('click', () => openBoard());
+$('songbook-btn-home').addEventListener('click', openBook);
+$('who-btn').addEventListener('click', () => showWelcome(true));
+
+/* ---------- Table controls ---------- */
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-act],[data-ear],[data-bluff],.card.pickable');
+  if (!t) return;
+  ac();
+  const a = t.dataset.act;
+  if (a === 'deal' || a === 'next') return nextStep();
+  if (a === 'bluffplay') return bluffPlay();
+  if (a === 'cashout') return endRun(false);
+  if (a === 'again-run') return startRun();
+  if (a === 'practice-these') return practiceThese();
+  if (a === 'board') { $('overlay').classList.remove('on'); return openBoard(lastRun); }
+  if (a === 'home') return goHome();
+  if (a === 'signin') return showWelcome(false);
+  if (t.dataset.bluff) return bluffCall(t.dataset.bluff === 'cheat');
+  if (t.dataset.ear != null) {
+    e.stopPropagation();
+    const c = S.hand.cards[+t.dataset.ear], tt = ac().currentTime + .05;
+    tone(midiOf(S.hand.ref), tt); tone(midiOf(c.n), tt + .8);
+    drawPiano({ ref: midiOf(S.hand.ref), card: midiOf(c.n) });
+    return;
+  }
+  if (t.classList.contains('pickable')) return choose(+t.dataset.i);
+});
+$('again').addEventListener('click', () => {
+  if (!S.hand || S.phase !== 'pick' || $('again').disabled) return;
+  S.replays++; syncTray(); playPair(S.hand.ref, S.hand.ans, S.hand.harmonic, .15);
+});
+$('hank').addEventListener('click', askHank);
+$('piano').addEventListener('pointerdown', e => { const k = e.target.closest('[data-m]'); if (!k) return; e.preventDefault(); pressKey(+k.dataset.m); });
+$('cashout').addEventListener('click', () => { if (!(S.phase === 'idle' || S.phase === 'result')) return; say('Riding off into the sunset with your winnings, are we?'); endRun(false); });
+$('practice-end').addEventListener('click', endPractice);
+document.addEventListener('keydown', e => {
+  if (e.target.closest('input, textarea') || view() !== 'game' || !$('welcome').hidden) return;
+  if (e.key === 'Enter') { const b = document.querySelector('#intro.on .go:not([disabled])') || (!$('intro').classList.contains('on') && !$('overlay').classList.contains('on') && document.querySelector('#actions .go')); if (b) { e.preventDefault(); b.click(); } return; }
+  if (e.key === ' ') { e.preventDefault(); $('again').click(); return; }
+  const n = +e.key;
+  if (S.phase === 'pick' && n >= 1 && n <= S.hand.cards.length) choose(n - 1);
+});
+
+/* ---------- Sign-in: one saved student for every game on the site ---------- */
+const FIREBASE = { apiKey: 'AIzaSyDU9vbCWJ4yWuD8bAX984DmQF4dvo13BHs', authDomain: 'rhythm-trainer-fc313.firebaseapp.com', projectId: 'rhythm-trainer-fc313', appId: '1:956677028482:web:c3ec72a279e61b6f6c929b' };
+const SCORES = 'earshot_scores';
+const SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
+let fbP = null, fbAuthP = null;
+function fb() {
+  fbP = fbP || Promise.all([import(SDK + 'firebase-app.js'), import(SDK + 'firebase-firestore.js')])
+    .then(([appMod, fs]) => ({ fs, db: fs.getFirestore(appMod.initializeApp(FIREBASE)) }))
+    .catch(e => { fbP = null; throw e; });
+  return fbP;
+}
+function fbAuth() {
+  fbAuthP = fbAuthP || Promise.all([fb(), import(SDK + 'firebase-auth.js')])
+    .then(([f, authMod]) => ({ ...f, authMod, auth: authMod.getAuth(f.db.app) }))
+    .catch(e => { fbAuthP = null; throw e; });
+  return fbAuthP;
+}
+const wait = p => Promise.race([p, new Promise((_, bad) => setTimeout(() => bad(new Error('timeout')), 12000))]);
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const PROFILE_KEY = 'rdt_profile_v1', GUEST_KEY = 'music_guest';
+function isGuest() { try { return sessionStorage.getItem(GUEST_KEY) === '1'; } catch { return false; } }
+function getProfile() { if (isGuest()) return null; try { const p = JSON.parse(localStorage.getItem(PROFILE_KEY) || 'null'); return p && p.first && p.init ? p : null; } catch { return null; } }
+function setProfile(p) { try { localStorage.setItem(PROFILE_KEY, JSON.stringify(p)); sessionStorage.removeItem(GUEST_KEY); } catch {} }
+const displayName = p => `${p.first.charAt(0).toUpperCase()}${p.first.slice(1)} ${p.init}.`;
+const cleanCode = v => String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+const sidOf = p => (p.first + p.init).toLowerCase().replace(/[^a-z]/g, '');
+// player icons, shared by every game (must match iconOk() in firestore.rules)
+const ICONS = ['🎹','🎸','🎺','🪊','🎷','🥁','🎻','🪕','🎤','🎧','🎼','𝄢','🎵','🪘','🪗','⭐','🔥','🚀'];
+const ICON_SVG = {
+  '🪊': '<svg class="ic-svg" viewBox="0 0 24 24" role="img" aria-label="trombone"><g fill="none" stroke="#e7b23a" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 13H5a2 2 0 0 0 0 4h11.5"/><path d="M15 8H6.5a2.5 2.5 0 0 0 0 5"/><path d="M11 8v5M19 17h2.5"/></g><path d="M14.5 6.6 22 3v10l-7.5-3.6z" fill="#e7b23a"/></svg>',
+  '𝄢': '<svg class="ic-svg" viewBox="0 0 24 24" role="img" aria-label="bass clef"><circle cx="6.2" cy="8.6" r="2.7" fill="currentColor"/><path d="M4 8C4.3 4.6 7.3 3 10.4 3c4 0 6.8 2.7 6.8 6.6 0 5.8-5.5 10-12.2 12" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/><circle cx="20.6" cy="6.6" r="1.4" fill="currentColor"/><circle cx="20.6" cy="12" r="1.4" fill="currentColor"/></svg>'
+};
+const iconHTML = ic => ICON_SVG[ic] || (ICONS.includes(ic) ? ic : '');
+const iconOf = p => (p && ICONS.includes(p.icon) ? p.icon : '');
+$('icon-grid').innerHTML = ICONS.map(i => `<button type="button" data-icon="${i}" aria-pressed="false" aria-label="Icon ${i}">${iconHTML(i)}</button>`).join('');
+$('icon-grid').addEventListener('click', e => { const b = e.target.closest('[data-icon]'); if (b) setPickedIcon(b.dataset.icon); });
+function setPickedIcon(ic) { $('icon-pick').dataset.icon = ic || ''; $('icon-grid').querySelectorAll('[data-icon]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.icon === ic))); }
+const pickedIcon = () => ICONS.includes($('icon-pick').dataset.icon) ? $('icon-pick').dataset.icon : ICONS[Math.floor(Math.random() * ICONS.length)];
+function updateWho() {
+  const p = getProfile();
+  $('who-btn').innerHTML = p ? `${iconHTML(iconOf(p)) || '👤'} ${esc(displayName(p))}${p.classCode ? ' · ' + esc(p.className) : ''}` : isGuest() ? '👤 Guest (sign in)' : '👤 Sign in';
+}
+function showWelcome(keep) {
+  const p = keep ? getProfile() : null;
+  setPickedIcon(p && p.icon);
+  $('w-first').value = p ? p.first : ''; $('w-init').value = p ? p.init : ''; $('w-code').value = p ? p.classCode || '' : '';
+  $('w-solo').checked = !!(p && !p.classCode); $('w-code').disabled = $('w-solo').checked; $('w-error').textContent = '';
+  $('welcome').hidden = false;
+  setTimeout(() => $('w-first').focus(), 50);
+}
+// Mr. Milnes plays as "Milnes D."; posting under that name needs his Google sign-in (the rules check it)
+const DEV_NAME = 'Milnes D.', DEV_EMAILS = ['milnesda@eht.k12.nj.us'];
+const isDevName = n => /^\s*milnes\s*d\.?\s*$/i.test(String(n || ''));
+async function devSignIn() { const { auth, authMod } = await fbAuth(); return (await authMod.signInWithPopup(auth, new authMod.GoogleAuthProvider())).user.email; }
+async function devPost(name) {
+  if (!isDevName(name)) return false;
+  const { auth } = await fbAuth();
+  if (auth.authStateReady) await auth.authStateReady();
+  let email = auth.currentUser && auth.currentUser.email;
+  if (!email || !DEV_EMAILS.includes(String(email).toLowerCase())) email = await devSignIn();
+  if (!DEV_EMAILS.includes(String(email).toLowerCase())) throw new Error('Only the developer can post as Milnes D.');
+  return true;
+}
+$('w-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const first = $('w-first').value.trim().replace(/\s+/g, ' '), init = $('w-init').value.trim().toUpperCase();
+  const solo = $('w-solo').checked, code = cleanCode($('w-code').value), err = $('w-error');
+  err.textContent = '';
+  if (!/^[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ' -]{0,14}$/.test(first)) { err.textContent = 'Enter your first name (letters only).'; $('w-first').focus(); return; }
+  if (!/^[A-Z]$/.test(init)) { err.textContent = 'Enter the first letter of your last name.'; $('w-init').focus(); return; }
+  if (isDevName(first + ' ' + init)) { try { await devPost(first + ' ' + init); } catch { err.textContent = 'That name is reserved. Use your own first name and last initial.'; return; } }
+  let className = '', classOwner = '';
+  if (!solo) {
+    if (!code) { err.textContent = 'Enter the class code from your teacher, or check "I\'m not in a class."'; $('w-code').focus(); return; }
+    $('w-go').disabled = true; $('w-go').textContent = 'Checking…';
+    try {
+      const { fs, db } = await fb(), d = await wait(fs.getDoc(fs.doc(db, 'classes', code)));
+      if (!d.exists()) { err.textContent = "We couldn't find that class code. Check it with your teacher."; $('w-code').focus(); return; }
+      className = d.data().name; classOwner = d.data().ownerEmail || '';
+    } catch { err.textContent = "Couldn't check the code. Check your internet connection and try again."; return; }
+    finally { $('w-go').disabled = false; $('w-go').textContent = 'Pull up a chair'; }
+  }
+  setProfile({ first, init, classCode: solo ? '' : code, className, classOwner, icon: pickedIcon() });
+  $('welcome').hidden = true; afterWho();
+});
+$('w-solo').addEventListener('change', e => { $('w-code').disabled = e.target.checked; if (e.target.checked) $('w-code').value = ''; });
+$('w-code').addEventListener('input', e => { const c = cleanCode(e.target.value); if (c !== e.target.value) e.target.value = c; });
+$('w-guest').addEventListener('click', () => { try { sessionStorage.setItem(GUEST_KEY, '1'); } catch {} $('welcome').hidden = true; afterWho(); });
+$('welcome').addEventListener('click', e => { if (e.target === $('welcome')) $('welcome').hidden = true; });
+function afterWho() { updateWho(); loadPosters(); drawPosters(); syncSaveLine(); }
+async function refreshClass() {
+  const p = getProfile(); if (!p || !p.classCode) return;
+  try {
+    const { fs, db } = await fb(), d = await wait(fs.getDoc(fs.doc(db, 'classes', p.classCode)));
+    setProfile(d.exists() ? { ...p, className: d.data().name, classOwner: d.data().ownerEmail || '' } : { ...p, classCode: '', className: '', classOwner: '' });
+    updateWho();
+  } catch {}
+}
+// a sign-in made in another game's tab shows up here too
+addEventListener('storage', e => { if (e.key === PROFILE_KEY) afterWho(); });
+
+/* ---------- Wanted posters: saved for each signed-in student on this computer ---------- */
+const POSTERS_KEY = 'earshot_posters_v1:';
+function loadPosters() {
+  const p = getProfile();
+  if (!p) return; // guests keep this session's posters in memory only
+  let d = null; try { d = JSON.parse(localStorage.getItem(POSTERS_KEY + sidOf(p)) || 'null'); } catch {}
+  S.caught = {}; S.seen = {};
+  if (d) OUT_ORDER.forEach(k => { if (Number.isInteger(d.caught?.[k])) S.caught[k] = d.caught[k]; if (d.seen?.[k]) S.seen[k] = 1; });
+}
+function savePosters() {
+  const p = getProfile(); if (!p) return;
+  try { localStorage.setItem(POSTERS_KEY + sidOf(p), JSON.stringify({ caught: S.caught, seen: S.seen })); } catch {}
+}
+
+/* ---------- Leaderboard ---------- */
+let boardScope = 'world', boardDiff = 'all', boardClef = 'all', boardRowsAll = [], boardState = 'loading', boardTok = 0;
+const BOARD_N = 60, BOARD_TTL = 60000, boardCache = new Map(), noIndex = {};
+const toRow = d => { const r = d.data(); return { ...r, id: d.id, at: r.created_at && r.created_at.toDate ? r.created_at.toDate().toISOString() : new Date().toISOString() }; };
+// try the indexed query; if its composite index is missing, use a simpler one for the rest of the visit
+async function indexed(shape, fresh, old) {
+  if (!noIndex[shape]) try { return await fresh(); } catch (e) { if (e.code !== 'failed-precondition') throw e; noIndex[shape] = true; console.warn('[index needed]', e.message); }
+  return old();
+}
+async function devRows(fs, db, extra = []) {
+  try { return (await fs.getDocs(fs.query(fs.collection(db, SCORES), fs.where('dev', '==', true), ...extra))).docs; } catch { return []; }
+}
+async function fetchRows(scope, diff) {
+  const { fs, db } = await fb(), p = getProfile(), col = fs.collection(db, SCORES), cls = scope === 'class' && p && p.classCode ? p.classCode : '';
+  const key = [cls ? 'class' : 'world', cls, diff].join('|'), hit = boardCache.get(key);
+  if (hit && Date.now() - hit.t < BOARD_TTL) return hit;
+  const eq = [...(cls ? [fs.where('class_code', '==', cls)] : []), ...(diff !== 'all' ? [fs.where('diff', '==', diff)] : [])];
+  const get = async q => (await wait(fs.getDocs(q))).docs.map(toRow);
+  const old = () => get(cls ? fs.query(col, fs.where('class_code', '==', cls)) : fs.query(col, fs.orderBy('score', 'desc'), fs.limit(400)));
+  let rows = eq.length ? await indexed('board' + (cls ? '+class' : '') + (diff !== 'all' ? '+diff' : ''), () => get(fs.query(col, ...eq, fs.orderBy('score', 'desc'), fs.limit(BOARD_N))), old)
+                      : await get(fs.query(col, fs.orderBy('score', 'desc'), fs.limit(BOARD_N)));
+  if (cls) { const seen = new Set(rows.map(r => r.id)); rows = rows.concat((await devRows(fs, db, diff !== 'all' ? [fs.where('diff', '==', diff)] : [])).map(toRow).filter(r => !seen.has(r.id))); }
+  const e = { rows, t: Date.now() };
+  boardCache.set(key, e);
+  return e;
+}
+function openBoard(run) {
+  const p = getProfile();
+  boardScope = p && p.classCode ? 'class' : 'world';
+  if (run) { boardDiff = run.diff; boardClef = run.clef; }
+  go('board'); loadBoard();
+}
+function drawBoardControls() {
+  const p = getProfile();
+  $('seg-scope').innerHTML = segHTML((p && p.classCode ? [['class', esc(p.className || 'My class')]] : []).concat([['world', 'World']]), boardScope);
+  $('seg-bdiff').innerHTML = segHTML([['all', 'All'], ...Object.entries(DIFF_TITLE)], boardDiff);
+  $('seg-bclef').innerHTML = segHTML([['all', 'All'], ['treble', 'Treble'], ['bass', 'Bass'], ['mixed', 'Mixed']], boardClef);
+}
+async function loadBoard() {
+  const tok = ++boardTok;
+  drawBoardControls(); boardState = 'loading'; renderBoard();
+  try { const e = await fetchRows(boardScope, boardDiff); if (tok !== boardTok) return; boardRowsAll = e.rows; boardState = 'ready'; }
+  catch { if (tok !== boardTok) return; boardState = 'off'; }
+  renderBoard();
+}
+function renderBoard() {
+  const list = $('ranks'), empty = $('board-empty'), sum = $('board-summary');
+  list.innerHTML = '';
+  if (boardState !== 'ready') { empty.hidden = false; sum.textContent = ''; empty.innerHTML = boardState === 'loading' ? '<b>Loading scores…</b>' : "<b>Couldn't load the leaderboard</b>Check your internet connection and try again."; return; }
+  const rows = boardRowsAll.filter(r => typeof r.score === 'number' && (boardDiff === 'all' || r.diff === boardDiff) && (boardClef === 'all' || r.clef === boardClef))
+    .sort((a, b) => b.score - a.score || (b.acc || 0) - (a.acc || 0) || String(a.at).localeCompare(String(b.at)));
+  const top = rows.slice(0, 25);
+  sum.innerHTML = rows.length ? `<b>Top ${top.length}</b> · ${boardDiff === 'all' ? 'every difficulty' : DIFF_TITLE[boardDiff]} · ${boardClef === 'all' ? 'every clef' : cap(boardClef)}` : '';
+  empty.hidden = rows.length > 0;
+  if (!rows.length) { empty.innerHTML = '<b>Be the first on this board</b>Cash out (or go bust) on the trail while signed in and your score posts here.'; return; }
+  list.innerHTML = top.map((r, i) => {
+    const when = r.at ? new Date(r.at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '';
+    return `<li class="${i < 3 ? 'r' + (i + 1) : ''} ${r.id === savedRunId ? 'mine' : ''}">
+      <span class="rank">${i + 1}</span>
+      <span><span class="nm">${ICONS.includes(r.icon) ? `<span class="nm-ic">${iconHTML(r.icon)}</span>` : ''}${esc(r.name || 'Player')}${r.dev ? ' <span class="devtag" title="Developer score">DEV</span>' : ''}</span>
+        <span class="tags">${[DIFF_TITLE[r.diff] || '', r.clef ? cap(r.clef) : ''].filter(Boolean).join(' · ')}</span></span>
+      <span class="detail">Town ${r.town ?? 1} · ${r.acc ?? 0}% · ${r.outlaws ?? 0} outlaw${r.outlaws === 1 ? '' : 's'}${r.busted ? ' · bust' : ''}${when ? ' · ' + when : ''}</span>
+      <span class="score">$${Number(r.score).toLocaleString()}</span></li>`;
+  }).join('');
+}
+$('board').addEventListener('click', e => {
+  const b = e.target.closest('.seg button'); if (!b) return;
+  const id = b.parentElement.id, v = b.dataset.v;
+  if (id === 'seg-scope') boardScope = v;
+  if (id === 'seg-bdiff') boardDiff = v;
+  if (id === 'seg-bclef') { boardClef = v; drawBoardControls(); renderBoard(); return; }
+  loadBoard();
+});
+$('board-back').addEventListener('click', () => { go(prevView === 'game' && S.phase === 'over' ? 'home' : prevView); if (view() === 'game' && S.phase === 'over') $('overlay').classList.add('on'); });
+async function saveRun() {
+  const p = getProfile(), r = lastRun;
+  if (!r || saving || savedRunId || !p || r.wasGuest) return;
+  saving = true; syncSaveLine();
+  const el = () => $('save-line');
+  try {
+    const { fs, db } = await fb();
+    const data = { name: displayName(p), score: Math.max(0, Math.round(r.score)), hands: r.hands, acc: r.acc, town: r.town, outlaws: r.outlaws, busted: r.busted, diff: r.diff, clef: r.clef, created_at: fs.serverTimestamp() };
+    if (p.classCode) data.class_code = p.classCode;
+    if (iconOf(p)) data.icon = iconOf(p);
+    if (await devPost(data.name)) { data.dev = true; data.name = DEV_NAME; }
+    const ref = await wait(fs.addDoc(fs.collection(db, SCORES), data));
+    savedRunId = ref.id;
+    boardCache.clear();
+    if (el()) { el().className = 'save ok'; el().innerHTML = `Posted as ${esc(displayName(p))}${p.classCode ? ' to ' + esc(p.className) + ' and the World board' : ' to the World board'}. <button type="button" data-act="board">See where you rank</button>`; }
+  } catch {
+    if (el()) { el().className = 'save err'; el().innerHTML = "Couldn't post your score. Check your internet connection. <button type=\"button\" id=\"retry-save\">Try again</button>"; const b = $('retry-save'); if (b) b.onclick = saveRun; }
+  }
+  saving = false;
+}
+
+/* ---------- Hank's Songbook page ---------- */
+const BOOK_ORDER = ['m2', 'M2', 'm3', 'M3', 'P4', 'TT', 'P5', 'm6', 'M6', 'm7', 'M7', 'P8'];
+const BOOK_NAME = { m2: 'Minor 2nd', M2: 'Major 2nd', m3: 'Minor 3rd', M3: 'Major 3rd', P4: 'Perfect 4th', TT: 'Tritone', P5: 'Perfect 5th', m6: 'Minor 6th', M6: 'Major 6th', m7: 'Minor 7th', M7: 'Major 7th', P8: 'Octave' };
+const BOOK_IV = { TT: 'A4' }; // the tritone is shown as an augmented 4th
+let BUS = null, bookTimers = [];
+function hankSVG() {
+  $('hank-svg').innerHTML = `
+  <rect x="96" y="20" width="118" height="112" rx="6" fill="#5a3418"/><rect x="102" y="26" width="106" height="46" rx="4" fill="#3a2414"/>
+  <rect x="96" y="86" width="118" height="12" fill="#2a170a"/>
+  ${Array.from({ length: 14 }, (_, i) => `<rect x="${99 + i * 8.2}" y="76" width="7.4" height="12" fill="#f4ead2"/>`).join('')}
+  ${[0, 1, 3, 4, 5, 7, 8, 10, 11, 12].map(i => `<rect x="${104.5 + i * 8.2}" y="76" width="4.6" height="7" fill="#1d1712"/>`).join('')}
+  <rect x="104" y="98" width="8" height="34" fill="#3a2414"/><rect x="198" y="98" width="8" height="34" fill="#3a2414"/>
+  <ellipse cx="60" cy="144" rx="44" ry="5" fill="rgba(0,0,0,.35)"/>
+  <rect x="34" y="118" width="54" height="8" rx="2" fill="#6b4423"/><rect x="40" y="126" width="5" height="18" fill="#3a2414"/><rect x="78" y="126" width="5" height="18" fill="#3a2414"/>
+  <path d="M30 120 Q32 84 58 80 Q84 84 88 120 Z" fill="#f1ead8"/>
+  ${[38, 46, 54, 62, 70, 78].map(x => `<line x1="${x}" y1="84" x2="${x}" y2="120" stroke="#b8322a" stroke-width="2.4" opacity=".7"/>`).join('')}
+  <path d="M84 96 Q96 90 104 78" stroke="#f1ead8" stroke-width="9" fill="none" stroke-linecap="round"/>
+  <rect x="84" y="88" width="10" height="5" rx="2" fill="#2a1d12" transform="rotate(-35 89 90)"/>
+  <circle cx="105" cy="77" r="4.5" fill="#e8b98e"/>
+  <rect x="51" y="68" width="14" height="14" fill="#d9a77c"/>
+  <ellipse cx="58" cy="56" rx="17" ry="19" fill="#e8b98e"/>
+  <circle cx="52" cy="53" r="2" fill="#2a1d12"/><circle cx="64" cy="53" r="2" fill="#2a1d12"/>
+  <path d="M44 63 Q51 58 58 62 Q65 58 72 63 Q68 67 62 65 Q58 64 54 65 Q48 67 44 63 Z" fill="#8a5a2b"/>
+  <ellipse cx="58" cy="39" rx="25" ry="5" fill="#1d1712"/><path d="M44 39 Q44 22 58 22 Q72 22 72 39 Z" fill="#2a1d12"/><rect x="44" y="34" width="28" height="4" fill="#b8322a"/>`;
+}
+function drawBookRows() {
+  ['up', 'down'].forEach(dir => {
+    $('row-' + dir).innerHTML = BOOK_ORDER.map(k => {
+      const sg = HANK[dir][k];
+      return `<button type="button" data-book="${dir}:${k}" aria-pressed="false"><b>${BOOK_NAME[k]} ${dir === 'up' ? '↑' : '↓'}</b><small>${sg[0]}${sg[3]?.check ? ' · sketch' : ''}</small></button>`;
+    }).join('');
+  });
+}
+function stopBook() {
+  bookTimers.forEach(clearTimeout); bookTimers = [];
+  if (BUS) { const b = BUS; b.gain.setTargetAtTime(0, ac().currentTime, .03); setTimeout(() => b.disconnect(), 300); BUS = null; }
+  document.querySelectorAll('#hank-steps li').forEach(li => li.classList.remove('now'));
+}
+function playBook(dir, k) {
+  stopBook();
+  const c = ac(); BUS = c.createGain(); BUS.connect(MASTER);
+  const sg = HANK[dir][k], up = dir === 'up';
+  const ref = up ? { l: 0, oct: 4, acc: 0 } : { l: 0, oct: 5, acc: 0 };
+  const ivKey = BOOK_IV[k] || k, other = spell(ref, ivKey, up ? 1 : -1) || spellAny(ref, ivKey, up ? 1 : -1);
+  const base = midiOf(ref), tgt = midiOf(other);
+  const name = BOOK_NAME[k].toLowerCase();
+  $('hank-say').innerHTML = `This is a <b>${name} going ${dir}</b>, like you hear at the beginning of <i>${sg[0]}</i>.`;
+  $('hank-staff').innerHTML = staffSVG({ clef: 'treble', ref, note: other, both: true });
+  $('hank-staff').classList.add('on');
+  document.querySelectorAll('[data-book]').forEach(b => b.setAttribute('aria-pressed', b.dataset.book === `${dir}:${k}`));
+  const steps = [...document.querySelectorAll('#hank-steps li')];
+  const mark = i => steps.forEach((li, j) => li.classList.toggle('now', i === j));
+  let t = c.currentTime + .1;
+  // 1. the interval
+  const t1 = t; tone(base, t, 1.3, .32, BUS); tone(tgt, t + .9, 1.5, .32, BUS); t += 2.6;
+  // 2. the song
+  const t2 = t; sg[1].forEach((o, i) => { tone(base + o, t, sg[2][i] + .45, .28, BUS); t += sg[2][i]; }); t += .9;
+  // 3. the interval again
+  const t3 = t; tone(base, t, 1.3, .32, BUS); tone(tgt, t + .9, 1.5, .32, BUS); t += 2.4;
+  const now = c.currentTime;
+  [[t1, 0], [t2, 1], [t3, 2], [t, -1]].forEach(([when, i]) => bookTimers.push(setTimeout(() => mark(i), Math.max(0, (when - now) * 1000))));
+}
+function spellAny(ref, key, dir) { const keep = S.diff; S.diff = 'expert'; const n = spell(ref, key, dir); S.diff = keep; return n; }
+function openBook() {
+  hankSVG(); drawBookRows(); go('songbook');
+}
+function closeBook() { stopBook(); go(prevView); }
+$('songbook-btn').addEventListener('click', openBook);
+$('songbook-back').addEventListener('click', closeBook);
+$('songbook').addEventListener('click', e => { const b = e.target.closest('[data-book]'); if (!b) return; const [dir, k] = b.dataset.book.split(':'); playBook(dir, k); });
+
+/* ---------- Start ---------- */
+[['hud-bank', 'bank'], ['hud-best', 'bust'], ['hud-chip', 'chip'], ['hud-streak', 'streak'], ['hud-hand', 'handno'], ['cashout', 'cash'], ['again', 'again'], ['hank', 'hank'], ['songbook-btn', 'songbook'], ['songbook-btn-home', 'songbook'], ['townsign', 'town'], ['clock', 'noon']]
+  .forEach(([id, k]) => { const el = $(id); (el.closest('.stat') || el).dataset.tip = TIPS[k]; });
+loadSettings(); drawHome(); dealerSVG(); loadPosters(); updateWho(); drawPosters(); refreshClass();
+document.fonts?.load('40px "Noto Music"', '\u{1D11E}\u{1D122}♯♭\u{1D12B}\u{1D12A}').then(() => { if (S.hand) refreshFaces(S.phase === 'result'); }).catch(() => {});
+</script>
+</body>
+</html>
