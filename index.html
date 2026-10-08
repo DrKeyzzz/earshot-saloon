@@ -301,6 +301,12 @@ body:not(.practice) .practice-only { display: none !important; }
 .poster.justcaught { animation: wallstamp .7s cubic-bezier(.2,1.6,.4,1); z-index: 2; }
 @keyframes wallstamp { 0% { transform: scale(1.6) rotate(-6deg); box-shadow: 0 0 0 4px var(--gold), 0 0 30px var(--gold); } 100% { transform: rotate(var(--tilt, 0deg)); } }
 
+/* Music Theory Games home link: the same in every game, on its own row at the top left of the header */
+.mtg-home { order: -1; flex: 0 0 100%; display: flex; gap: 8px; flex-wrap: wrap; }
+.mtg-home a { display: inline-flex; align-items: center; gap: 7px; width: fit-content; font: 600 13px/1 system-ui, -apple-system, "Segoe UI", sans-serif; letter-spacing: .06em; color: inherit; text-decoration: none; opacity: .82; padding: 6px 12px 6px 10px; border: 1px solid color-mix(in srgb, currentColor 35%, transparent); border-radius: 999px; }
+.mtg-home a:hover, .mtg-home a:focus-visible { opacity: 1; border-color: currentColor; }
+.mtg-home svg { width: 15px; height: 15px; flex: none; }
+header:has(> .mtg-home) { flex-wrap: wrap; }
 .tip { position: fixed; z-index: 40; max-width: 290px; padding: 9px 12px; border-radius: 10px; background: var(--paper); color: var(--ink); font-size: 14.5px; line-height: 1.35; box-shadow: 0 8px 22px rgba(0,0,0,.55); border: 2px solid #b89a5e; pointer-events: none; opacity: 0; transform: translateY(4px); transition: opacity .15s, transform .15s; }
 .tip.on { opacity: 1; transform: none; }
 .tip b { color: var(--red); }
@@ -404,6 +410,7 @@ button.big:not(:disabled) { animation: rise .5s 1.5s both, glow 1.4s 2s ease-in-
 <body>
 <div class="wrap" id="home">
   <header class="top home-top">
+    <div class="mtg-home"><a href="https://drkeyzzz.github.io/" title="All the Music Theory Games"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11 12 3l9 8"/><path d="M5 9.5V21h5v-6h4v6h5V9.5"/></svg>Music Theory Games</a><a href="https://drkeyzzz.github.io/report/" title="See your report: what you're doing well and what to practice next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>My Report</a></div>
     <div class="brand">
       <span class="eyebrow">Mr. Milnes's Music Theory Games</span>
       <h1>Earshot Saloon</h1>
@@ -411,7 +418,6 @@ button.big:not(:disabled) { animation: rise .5s 1.5s both, glow 1.4s 2s ease-in-
     </div>
     <div class="topbtns">
       <button type="button" class="who-pill" id="who-btn">👤 Sign in</button>
-      <a class="btnlink" href="https://drkeyzzz.github.io/">All games</a>
     </div>
   </header>
 
@@ -459,6 +465,7 @@ button.big:not(:disabled) { animation: rise .5s 1.5s both, glow 1.4s 2s ease-in-
 
 <div class="wrap" id="game" hidden>
   <header class="top">
+    <div class="mtg-home"><a href="https://drkeyzzz.github.io/" title="All the Music Theory Games"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11 12 3l9 8"/><path d="M5 9.5V21h5v-6h4v6h5V9.5"/></svg>Music Theory Games</a><a href="https://drkeyzzz.github.io/report/" title="See your report: what you're doing well and what to practice next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>My Report</a></div>
     <div class="brand">
       <span class="eyebrow" id="eyebrow">Town 1 · Tumbleweed Flats</span>
       <h1>Earshot Saloon</h1>
