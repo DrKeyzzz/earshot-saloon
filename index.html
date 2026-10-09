@@ -2116,7 +2116,22 @@ async function saveRun() {
       saving = false; return;
     }
     if (dv === 'yes') { data.dev = true; data.name = DEV_NAME; }
-    const ref = await wait(fs.addDoc(fs.collection(db, SCORES), data));
+    let ref;
+    try { ref = await wait(fs.addDoc(fs.collection(db, SCORES), data)); }
+    catch (e) {
+      // a developer score turned away usually means a stale Google sign-in: refresh it once and try again
+      if (!(data.dev && e && e.code === 'permission-denied')) throw e;
+      const { auth } = await fbAuth();
+      if (auth.currentUser) await auth.currentUser.getIdToken(true).catch(() => {});
+      try { ref = await wait(fs.addDoc(fs.collection(db, SCORES), data)); }
+      catch (e2) {
+        if (el()) {
+          el().className = 'save err'; el().innerHTML = 'Your Google sign-in on this computer needs a refresh to post as Milnes D. <button type="button" id="dev-signin">Sign in with Google again</button>';
+          $('dev-signin').onclick = async () => { try { await devSignIn(); saveRun(); } catch (x) { el().className = 'save err'; el().textContent = `Google sign-in didn't finish (${x && x.code || 'cancelled'}).`; } };
+        }
+        saving = false; return;
+      }
+    }
     savedRunId = ref.id;
     boardCache.clear();
     if (el()) { el().className = 'save ok'; el().innerHTML = `Posted as ${esc(displayName(p))}${p.classCode ? ' to ' + esc(classNames(p)) + ' and the World board' : ' to the World board'}. <button type="button" data-act="board">See where you rank</button>`; }
