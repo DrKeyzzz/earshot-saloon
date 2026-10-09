@@ -381,16 +381,34 @@ button.big:not(:disabled) { animation: rise .5s 1.5s both, glow 1.4s 2s ease-in-
 .ivbtns button[aria-pressed="true"] small { color: var(--ink); }
 /* Wide, short screens (classroom displays, laptops): the wall with the trail, town sign and posters
    becomes a sidebar, so the table can stay big. fitGame() then scales everything to the screen's height. */
-@media (min-width: 1200px) and (min-aspect-ratio: 3/2) {
+@media (min-width: 880px) and (min-aspect-ratio: 4/3) {
   #game { max-width: 1720px; }
-  #game .stage { display: grid; grid-template-columns: 300px minmax(0, 1fr); grid-template-rows: auto auto auto 1fr; }
+  #game .stage { display: grid; grid-template-columns: 310px minmax(0, 1fr); grid-template-rows: auto auto auto 1fr; }
   #game .wall { grid-column: 1; grid-row: 1 / span 4; padding: 14px; border-right: 6px solid var(--rail); }
   #game .room { grid-column: 2; grid-row: 1; }
   #game .tray { grid-column: 2; grid-row: 2; }
   #game .piano { grid-column: 2; grid-row: 3; }
   #game .wallrow { flex-direction: column; align-items: stretch; }
-  #game .posters { flex-wrap: wrap; overflow: visible; justify-content: center; gap: 10px 8px; padding-top: 4px; }
-  #game .poster { width: 80px; }
+  /* the Wanted posters become an easy-to-read list: face, name, interval, CAPTURED */
+  #game .posters { flex-direction: column; flex-wrap: nowrap; overflow: visible; gap: 4px; padding-top: 2px; }
+  #game .poster { width: auto; display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; grid-template-areas: "pic n st" "pic i st"; column-gap: 9px; align-items: center; padding: 3px 8px 3px 4px; text-align: left; transform: none; border-radius: 4px; }
+  #game .poster .w { display: none; }
+  #game .poster svg { grid-area: pic; width: 34px; border-radius: 3px; }
+  #game .poster .n { grid-area: n; font-size: 15px; line-height: 1.1; min-height: 0; }
+  #game .poster .i { grid-area: i; font-size: 12.5px; }
+  #game .poster .stamp { grid-area: st; position: static; transform: rotate(-8deg); font-size: 10px; padding: 1px 4px; }
+  #game .poster .star { top: -4px; right: -4px; font-size: 13px; }
+  #game .poster.justcaught { animation: none; box-shadow: 0 0 0 3px var(--gold), 0 0 18px var(--gold); }
+  /* bigger words everywhere so they read from the back of a classroom */
+  #game .trail .tk { font-size: 13px; }
+  #game .trail .tp { font-size: 15px; height: 28px; min-width: 30px; }
+  #game .townsign b { font-size: 22px; }
+  #game .stat .k { font-size: 13px; }
+  #game .stat .v { font-size: 26px; }
+  #game .top h1 { font-size: 40px; }
+  #game .tray { padding: 6px 14px; }
+  #game .tray button { font-size: 17px; }
+  #game .dealer { width: 160px; }
   /* big cards and text on a wide screen, and less empty felt above and below them */
   #game .card { width: clamp(150px, 12.5vw, 230px); }
   #game .card.hole { width: clamp(110px, 8.5vw, 160px); }
@@ -1627,7 +1645,7 @@ function fitGame() {
   if (window.innerWidth < 700) return; // phones scroll instead; shrinking would make the cards too small to tap
   const r = g.getBoundingClientRect();
   const byW = (window.innerWidth - 8) / r.width;
-  const z = v === 'game' ? Math.max(.5, Math.min(2.5, byW, (window.innerHeight - 4) / r.height))
+  const z = v === 'game' ? Math.max(.68, Math.min(2.5, byW, (window.innerHeight - 4) / r.height))
     : window.innerWidth > 2000 ? Math.min(2.2, window.innerWidth / 1500) : 1;   // only very large screens enlarge the other pages
   g.style.zoom = Math.abs(z - 1) > .01 ? z.toFixed(3) : 1;
 }
