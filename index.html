@@ -339,6 +339,8 @@ button[data-tip] { cursor: pointer; }
 .intro-portrait svg { width: 100%; display: block; background: #3a2414; border: 3px solid var(--gold); border-radius: 50%; }
 .intro-poster { width: 180px; background: var(--paper); color: var(--ink); padding: 6px 8px 8px; border-radius: 2px; box-shadow: 0 6px 16px rgba(0,0,0,.6); transform-origin: 50% 0; animation: posterdrop 1s .4s both cubic-bezier(.2,1.5,.4,1), swing 2s 1.4s ease-in-out infinite alternate; }
 .intro-poster svg { display: block; width: 100%; height: auto; }
+/* High Noon: the outlaw stays a silhouette until all three draws are done, so the ear has to name the interval */
+.masked { filter: brightness(0) opacity(.8); }
 .intro-poster .w { font-family: var(--f-display); font-size: 26px; line-height: 1; }
 .intro-poster .n { font-family: var(--f-display); font-size: 17px; margin-top: 4px; }
 .intro-poster .i { font-size: 13px; font-weight: 700; color: #6b5a3e; }
@@ -1209,7 +1211,7 @@ function reveal() {
     if (tok !== S.tok) return;
     S.phase = 'pick'; syncTray(); refreshFaces(false);
     document.querySelectorAll('#cards .card').forEach(el => el.classList.add('pickable'));
-    say(S.noon ? `<b>${OUTLAWS[S.noon.out].name}</b> is reaching for the deck… pick fast! (You get <b>one</b> Again, Dealer.)` : 'Pick the card you heard.');
+    say(S.noon ? `The <b>masked outlaw</b> is reaching for the deck… pick fast! (You get <b>one</b> Again, Dealer.)` : 'Pick the card you heard.');
     setActions(`<span class="hint">Click a card, or press 1–4${help('h-ear') ? '. Tap 👂 to hear any card with the hole note' : ''}.</span>`);
     if (S.noon) startClock();
   }, ms);
@@ -1235,26 +1237,30 @@ function choose(i) {
   stopClock();
   S.phase = 'result'; syncTray();
   const h = S.hand, right = i >= 0 && h.cards[i].right, iv = IV[h.key], outl = OUTLAWS[iv.out];
-  if (!S.seen[iv.out]) { S.seen[iv.out] = 1; savePosters(); }
+  // High Noon keeps the outlaw (and so the interval) hidden until the last draw
+  const hide = !!S.noon && S.noon.done < 2;
+  if (!hide && !S.seen[iv.out]) { S.seen[iv.out] = 1; savePosters(); }
   document.querySelectorAll('#cards .card').forEach(el => {
     el.classList.remove('pickable'); const j = +el.dataset.i;
-    if (h.cards[j].right) el.classList.add('right');
+    if (h.cards[j].right && !hide) el.classList.add('right');
     if (j === i) el.classList.add('picked', right ? 'right' : 'wrong');
     if (j === i && right) { el.classList.add('pop'); if (!S.noon && S.mode !== 'practice') chipBurst(el); }
   });
-  refreshFaces(true);
-  drawPiano({ ref: midiOf(h.ref), ans: midiOf(h.ans) });
+  refreshFaces(!hide);
+  drawPiano(hide ? { ref: midiOf(h.ref) } : { ref: midiOf(h.ref), ans: midiOf(h.ans) });
   // stats
   const st = S.stats; st.total++; const ivKey = SHORT(h.key) + (h.harmonic ? ' (together)' : h.dir > 0 ? ' ↑' : ' ↓');
   st.byIv[ivKey] = st.byIv[ivKey] || [0, 0, outl.name]; st.byIv[ivKey][1]++;
   st.byKey[h.key] = st.byKey[h.key] || [0, 0]; st.byKey[h.key][1]++;
   MTG_HIST.note('earshot', [histLabel(h.key), h.harmonic ? 'Both notes at once' : h.dir < 0 ? 'Intervals going down' : null], right);
   if (right) { st.right++; st.byIv[ivKey][0]++; st.byKey[h.key][0]++; }
-  else if (i >= 0) { const m = `${IV[h.cards[i].k].num === iv.num ? IV[h.cards[i].k].name : ord(IV[h.cards[i].k].num)} when it was a ${iv.disg ? iv.name : (IV[h.cards[i].k].num === iv.num ? iv.name : ord(iv.num))}`; st.mix[m] = (st.mix[m] || 0) + 1; }
+  else if (i >= 0) { const m = `${IV[h.cards[i].k].num === iv.num ? IV[h.cards[i].k].name : ord(IV[h.cards[i].k].num)} when it was ${aAn(iv.disg ? iv.name : (IV[h.cards[i].k].num === iv.num ? iv.name : ord(iv.num)))}`; st.mix[m] = (st.mix[m] || 0) + 1; }
 
   const dirTxt = h.harmonic ? 'together' : h.dir > 0 ? 'up' : 'down';
-  let line = right ? `<b>${cap(iv.name)} ${dirTxt}!</b> That's ${outl.name}.` : i < 0 ? `Too slow, partner! It was a <b>${iv.name} ${dirTxt}</b>.` : `Nope. That was a <b>${iv.name} ${dirTxt}</b>, ${outl.name}.`;
-  if (iv.disg) line = `<b>${cap(iv.name)}!</b> That's ${outl.name} <b>in disguise</b>. It sounds just like a ${IV[iv.out]?.name || outl.iv}, but it's spelled <b>${nameOf(h.ans)}</b>.`;
+  let line = right ? `<b>${cap(iv.name)} ${dirTxt}!</b> That's ${outl.name}.` : i < 0 ? `Too slow, partner! It was ${art(iv.name)} <b>${iv.name} ${dirTxt}</b>.` : `Nope. That was ${art(iv.name)} <b>${iv.name} ${dirTxt}</b>, ${outl.name}.`;
+  if (iv.disg) line = `<b>${cap(iv.name)}!</b> That's ${outl.name} <b>in disguise</b>. It sounds just like ${aAn(IV[iv.out]?.name || outl.iv)}, but it's spelled <b>${nameOf(h.ans)}</b>.`;
+  if (hide) line = right ? `<b>Hit!</b> ✓ The outlaw flinches.` : i < 0 ? `Too slow, partner! ✗` : `<b>Missed!</b> ✗ The outlaw laughs.`;
+  else if (S.noon && right && !iv.disg) line = `<b>${cap(iv.name)} ${dirTxt}!</b> The masked outlaw is <b>${outl.name}</b>!`;
 
   if (S.mode === 'practice') {
     if (right) { S.streak++; sfx.win(); } else { S.streak = 0; sfx.lose(); }
@@ -1285,8 +1291,9 @@ function afterHand() {
     return;
   }
   if (S.noon && S.noon.done >= 3) {
-    $('clock').classList.remove('on');
+    $('clock').classList.remove('on'); $('dealer').classList.remove('masked');
     const k = S.noon.out, o = OUTLAWS[k];
+    S.seen[k] = 1; savePosters(); drawPosters();
     const tok = S.tok;
     const pressLuck = () => {
       if (tok !== S.tok) return;
@@ -1329,6 +1336,8 @@ function afterHand() {
   }, Math.max(600, (quietAt - ac().currentTime) * 1000));
 }
 const cap = s => s[0].toUpperCase() + s.slice(1);
+// "a 5th", "an octave", "an augmented 4th" ("a unison": the u sounds like "you")
+const art = w => /^[aeio]/i.test(w) ? 'an' : 'a', aAn = w => art(w) + ' ' + w;
 const ord = n => ({ 1: 'unison', 2: '2nd', 3: '3rd', 4: '4th', 5: '5th', 6: '6th', 7: '7th', 8: 'octave' })[n];
 
 
@@ -1457,6 +1466,7 @@ const stings = {
 // Who sits across the table: the dealer, Crooked Clara, or a High Noon outlaw (with a mood)
 function setSeat(who, mood = 'normal', outlaw = '') {
   const d = $('dealer'), key = [who, mood, outlaw].join('|');
+  d.classList.remove('masked');
   if (d.dataset.seat === key) return;
   d.dataset.seat = key;
   if (who === 'clara') { d.setAttribute('viewBox', '0 0 120 120'); d.innerHTML = claraSVG(mood).replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, ''); }
@@ -1480,11 +1490,10 @@ function introNoon() {
   const out = pick(fresh.length ? fresh : live), o = OUTLAWS[out];
   S.noon = { out, keys: POOLS[S.diff].filter(k => IV[k].out === out && !IV[k].disg), done: 0, won: 0 };
   const bounty = 5 * (S.town + 1) * chipVal(), secs = NOON_SECS;
-  S.seen[out] = 1; drawPosters();
   showIntro(`<div class="intro-kicker">The clock strikes twelve…</div>
     <h2 class="intro-title noon">High Noon</h2>
-    <div class="intro-poster"><div class="w">WANTED</div>${outlawSVG(o, 150)}<div class="n">${o.name}</div><div class="i">the ${o.iv}</div><div class="b">Bounty $${bounty}</div></div>
-    <p class="intro-rules"><b>${o.name}</b> rides into ${TOWNS[S.town % TOWNS.length]}. Three quick draws, every one a <b>${o.iv}</b>.<br>Pick before the clock runs out (<b>${secs} seconds</b>). You can hear it <b>one more time</b> with Again, Dealer. Win <b>2 of 3</b> to lasso the outlaw and collect the bounty.</p>`,
+    <div class="intro-poster"><div class="w">WANTED</div><svg class="masked" viewBox="0 0 120 112" style="margin:10px 0 4px" aria-label="A masked outlaw">${outlawSeatSVG(o)}</svg><div class="n">???</div><div class="i">Name them by ear</div><div class="b">Bounty $${bounty}</div></div>
+    <p class="intro-rules">A <b>masked outlaw</b> rides into ${TOWNS[S.town % TOWNS.length]}. Three quick draws, all the <b>same interval</b>. Listen and find out which one.<br>Pick before the clock runs out (<b>${secs} seconds</b>). You can hear it <b>one more time</b> with Again, Dealer. Win <b>2 of 3</b> to unmask the outlaw and collect the bounty.</p>`,
     "Show 'em who's boss 🤠 ↵", dealNoon, stings.noon);
   say(`Folks are clearing the street…`, 'The dealer');
 }
@@ -1535,11 +1544,11 @@ function dealNoon() {
     const keys = POOLS[S.diff].filter(k => IV[k].out === out && !IV[k].disg);
     S.noon = { out, keys, done: 0, won: 0 };
   }
-  setSeat('outlaw', 'normal', S.noon.out);
+  setSeat('outlaw', 'normal', S.noon.out); $('dealer').classList.add('masked');
   $('clock').classList.add('on'); $('clock-n').textContent = NOON_SECS;
   S.hand = buildHand(pick(S.noon.keys)); S.bet = 2; S.replays = 0; S.hankUsed = false;
   drawHUD(); drawHole(true); drawCards(); drawPiano({ ref: midiOf(S.hand.ref) });
-  $('hole-lbl').textContent = "Dealer's card"; $('cards-lbl').textContent = `Showdown ${S.noon.done + 1} of 3 · ${OUTLAWS[S.noon.out].name}`;
+  $('hole-lbl').textContent = "Dealer's card"; $('cards-lbl').textContent = `Showdown ${S.noon.done + 1} of 3 · Masked outlaw`;
   listenThenBet();
 }
 
@@ -2138,7 +2147,7 @@ async function saveRun() {
   } catch (e) {
     console.warn('score not posted', e);
     const why = e && e.code === 'permission-denied' ? 'The leaderboard turned this score away' : e && e.message === 'timeout' ? 'The leaderboard took too long to answer' : 'Check your internet connection';
-    if (el()) { el().className = 'save err'; el().innerHTML = `Couldn't post your score. ${why} (${esc(e && (e.code || e.message) || 'error')}). <button type="button" id="retry-save">Try again</button>`; const b = $('retry-save'); if (b) b.onclick = saveRun; }
+    if (el()) { el().className = 'save err'; el().innerHTML = `Couldn't post your score. ${why}. <button type="button" id="retry-save">Try again</button>`; const b = $('retry-save'); if (b) b.onclick = saveRun; }
   }
   saving = false;
 }
