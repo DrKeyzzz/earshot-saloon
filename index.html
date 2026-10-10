@@ -195,23 +195,64 @@ button.red { background: var(--red); border-color: var(--red); }
 a.btnlink { font-weight: 700; font-size: 15px; color: var(--ivory); background: var(--wood2); border: 1px solid var(--rail); border-radius: 10px; padding: 8px 14px; text-decoration: none; }
 a.btnlink:hover { border-color: var(--gold); }
 .panel h2.ph { font-family: var(--f-display); font-weight: 400; font-size: 22px; margin: 0; color: var(--gold); }
-.diffs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
-.diffs button { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left; padding: 10px 12px; min-height: 92px; background: var(--plank); }
-.diffs button b { font-family: var(--f-display); font-weight: 400; font-size: 20px; color: var(--ivory); }
-.diffs button small { font-weight: 600; font-size: 13px; line-height: 1.3; color: var(--dust); }
-.diffs button[aria-pressed="true"] { border-color: var(--gold); background: color-mix(in srgb, var(--gold) 14%, var(--plank)); box-shadow: inset 0 0 0 1px var(--gold); }
-.diffs button[aria-pressed="true"] b { color: var(--gold); }
-.startrow { gap: 10px; margin-top: 4px; }
-.startrow .go.big { animation: none; }
+/* The start screen (2026-10): the Deal button sits on the felt, three dropdowns under it, the rest in "More options" */
+.hometable .room { padding: 16px 14px 20px; }
+.hometable .roundtable { margin: 0 auto; padding: 22px 8% 30px; gap: 10px; text-align: center; }
+.fan { display: flex; justify-content: center; height: 54px; margin-bottom: 2px; }
+.fan i { width: 38px; height: 54px; margin: 0 -7px; border-radius: 5px; border: 2px solid var(--ivory); box-shadow: 0 3px 6px rgba(0,0,0,.45);
+  background: repeating-linear-gradient(-45deg, rgba(230,184,76,.45) 0 2px, transparent 2px 8px), var(--red); transform: rotate(var(--r)); transform-origin: 50% 100%; }
+.deal-title { font-family: var(--f-display); font-weight: 400; font-size: clamp(26px, 4.4vw, 42px); line-height: 1; margin: 0; color: var(--ivory); text-shadow: 0 3px 0 #000; }
+.deal-title span { color: var(--gold); }
+#home .deal-big { font-family: var(--f-display); font-weight: 400; font-size: clamp(24px, 3.4vw, 34px); letter-spacing: .03em; padding: 14px 40px 11px; margin: 4px 0 2px; border-radius: 16px; animation: glow 1.4s ease-in-out infinite alternate; }
+@media (prefers-reduced-motion: reduce) { #home .deal-big { animation: none; } }
+.deal-sum { font-weight: 700; font-size: 16px; letter-spacing: .03em; color: var(--ivory); background: rgba(0,0,0,.32); border: 1px solid rgba(230,184,76,.4); border-radius: 999px; padding: 4px 14px; }
+.deal-sum b { color: var(--gold); }
+.deal-hint { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; font-size: 14px; color: #cfe6d6; }
+.deal-hint kbd { font: 700 12px var(--f-ui); border: 1px solid #cfe6d6; border-radius: 5px; padding: 1px 6px; }
+.deal-hint .linkish { align-self: auto; font-size: 15px; text-decoration: underline; text-underline-offset: 3px; }
+.quick { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; gap: 10px; align-items: end; }
+.dd { position: relative; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.dd > span { font-size: 12px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--haze); }
+.dd .sel { width: 100%; text-align: left; font-size: 17px; background: #24170c; border-radius: 12px; padding: 10px 36px 10px 14px; position: relative; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dd .sel::after { content: ''; position: absolute; right: 14px; top: 50%; width: 8px; height: 8px; border: solid var(--dust); border-width: 0 2px 2px 0; transform: translateY(-70%) rotate(45deg); }
+.dd .sel[aria-expanded="true"] { border-color: var(--gold); }
+.dd-menu { position: absolute; z-index: 30; top: calc(100% + 6px); left: 0; min-width: 100%; width: max-content; max-width: min(380px, calc(100vw - 32px)); padding: 6px; border-radius: 14px; border: 2px solid var(--gold);
+  background: linear-gradient(180deg, var(--wood2), var(--wood)); box-shadow: 0 18px 40px -10px rgba(0,0,0,.8); display: flex; flex-direction: column; gap: 2px; }
+.dd-menu.up { top: auto; bottom: calc(100% + 6px); }
+.dd:nth-of-type(3) .dd-menu { left: auto; right: 0; }
+.dd-menu button { background: none; border: 0; border-radius: 10px; text-align: left; padding: 8px 12px; display: flex; flex-direction: column; gap: 1px; }
+.dd-menu button:hover, .dd-menu button:focus-visible { background: rgba(0,0,0,.3); outline-offset: -2px; }
+.dd-menu button b { font-size: 17px; }
+.dd-menu button small { font-weight: 600; font-size: 14px; line-height: 1.25; color: var(--dust); }
+.dd-menu button[aria-selected="true"] b { color: var(--gold); }
+.dd-menu button[aria-selected="true"] b::before { content: '✓ '; }
+.more-btn { white-space: nowrap; padding: 11px 16px; border-radius: 12px; background: none; }
+.more-btn[aria-expanded="true"] { border-color: var(--gold); color: var(--gold); }
+.more { padding: 0; gap: 0; overflow: hidden; }
+.mtabs { display: flex; flex-wrap: wrap; gap: 2px; border-bottom: 1px solid var(--rail); padding: 6px 6px 0; }
+.mtabs button { background: none; border: 0; border-bottom: 3px solid transparent; border-radius: 0; color: var(--haze); text-transform: uppercase; letter-spacing: .08em; padding: 10px 14px 8px; }
+.mtabs button[aria-selected="true"] { color: var(--ivory); border-color: var(--gold); }
+.mpanel { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.mnote { margin: 0; color: var(--dust); }
+.mnote button { margin-left: 8px; padding: 5px 12px; font-size: 14px; }
+.homebtns { display: flex; flex-wrap: wrap; gap: 8px; }
+@media (max-width: 640px) {
+  .quick { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .quick .dd:first-child, .quick .more-btn { grid-column: 1 / -1; }
+  .dd:nth-of-type(3) .dd-menu { left: auto; right: 0; }
+  .dd:nth-of-type(2) .dd-menu { left: 0; right: auto; }
+  .hometable .room { padding: 10px 8px 14px; }
+  .hometable .roundtable { margin-top: 0; padding: 20px 12px 26px; }
+}
 .ivpick { display: flex; flex-wrap: wrap; gap: 6px; }
 .ivpick label { display: inline-flex; gap: 6px; align-items: center; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--rail); background: var(--plank); font-weight: 600; font-size: 14px; cursor: pointer; }
 .ivpick input { accent-color: var(--gold); }
 .ivpick label:has(input:checked) { border-color: var(--gold); color: var(--gold); }
 .posters.wall-big { flex-wrap: wrap; overflow: visible; }
 .posters.wall-big .poster { width: 84px; }
-.howto ol { margin: 0; padding-left: 22px; color: var(--dust); }
-.howto li { margin: 5px 0; }
-.howto b { color: var(--ivory); }
+.howto-card ol { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 8px; font-size: 17px; color: var(--ivory); }
+.howto-card ol b { color: var(--gold); }
+.howto-card .go { align-self: center; font-size: 19px; padding: 11px 26px; }
 .muted { color: var(--dust); margin: 0; }
 body.practice .trail-only { display: none !important; }
 body:not(.practice) .practice-only { display: none !important; }
@@ -230,7 +271,6 @@ body:not(.practice) .practice-only { display: none !important; }
 .board-empty { color: var(--dust); text-align: center; padding: 18px; }
 .board-empty b { display: block; color: var(--ivory); font-size: 18px; }
 @media (max-width: 640px) {
-  .diffs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .board-list li { grid-template-columns: 32px minmax(0, 1fr) auto; }
   .board-list .detail { display: none; }
 }
@@ -450,32 +490,52 @@ button.big:not(:disabled) { animation: rise .5s 1.5s both, glow 1.4s 2s ease-in-
       <p class="tagline">Hear the interval. Find the note. Lasso the outlaws.</p>
     </div>
     <div class="topbtns">
+      <button type="button" class="twoline" id="songbook-btn-home"><span>🎹 Hank's Songbook</span><small>Learn the intervals</small></button>
+      <button type="button" id="board-btn">🏆 Leaderboard</button>
       <button type="button" class="who-pill" id="who-btn">👤 Sign in</button>
     </div>
   </header>
 
-  <section class="panel">
-    <h2 class="ph">Pick your table</h2>
-    <div class="diffs" id="diffs"></div>
-    <div class="row"><span class="rk">Clef</span><div class="seg" id="seg-clef"></div></div>
-    <div class="row"><span class="rk">Mode</span><div class="seg" id="seg-mode"></div></div>
-    <div class="row helpers" id="helpers"><span class="rk">Greenhorn helpers</span>
-      <label><input type="checkbox" id="h-letters" checked>Letter names</label>
-      <label><input type="checkbox" id="h-ear" checked>👂 Listen to each card</label>
-      <label><input type="checkbox" id="h-steps" checked>Count the steps</label>
-      <label><input type="checkbox" id="h-piano" checked>Piano strip</label>
+  <section class="stage hometable" aria-label="Start a game">
+    <div class="room">
+      <div class="roundtable">
+        <div class="fan" aria-hidden="true"><i style="--r:-14deg"></i><i style="--r:0deg"></i><i style="--r:14deg"></i></div>
+        <h2 class="deal-title" id="deal-title">Ready to play, <span>partner?</span></h2>
+        <button type="button" class="go big deal-big" id="start-btn">Deal me in 🤠</button>
+        <div class="deal-sum" id="deal-sum"></div>
+        <div class="deal-hint"><span>or press <kbd>Enter</kbd></span><span aria-hidden="true">·</span><button type="button" class="linkish" id="howto-btn">? How to play</button></div>
+      </div>
     </div>
-    <div id="practice-set" hidden>
-      <div class="row"><span class="rk">Intervals</span><div class="ivpick" id="ivpick"></div></div>
-      <div class="row"><span class="rk">Direction</span><div class="seg" id="seg-dir"></div></div>
-      <div class="row"><span class="rk">Sound</span><div class="seg" id="seg-sound"></div></div>
+  </section>
+
+  <div class="quick" id="quick">
+    <div class="dd" data-name="diff"><span id="dd-diff-l">Difficulty</span></div>
+    <div class="dd" data-name="clef"><span id="dd-clef-l">Clef</span></div>
+    <div class="dd" data-name="mode"><span id="dd-mode-l">Mode</span></div>
+    <button type="button" class="more-btn" id="more-btn" aria-expanded="false" aria-controls="more">⚙ More options</button>
+  </div>
+  <section class="panel more" id="more" hidden>
+    <div class="mtabs" role="tablist" aria-label="More options">
+      <button type="button" role="tab" data-tab="practice" aria-selected="true">Practice set</button>
+      <button type="button" role="tab" data-tab="helpers" aria-selected="false">Greenhorn helpers</button>
     </div>
-    <div class="row startrow">
-      <button type="button" class="go big" id="start-btn">Deal me in 🤠</button>
-      <button type="button" id="board-btn">🏆 Leaderboard</button>
-      <button type="button" class="twoline" id="songbook-btn-home"><span>🎹 Hank's Songbook</span><small>Learn the intervals</small></button>
+    <div class="mpanel" data-panel="practice" role="tabpanel">
+      <p class="mnote" id="practice-note">These choices are used when <b>Mode</b> is Practice.<button type="button" id="practice-use">Use Practice</button></p>
+      <div id="practice-set">
+        <div class="row"><span class="rk">Intervals</span><div class="ivpick" id="ivpick"></div></div>
+        <div class="row"><span class="rk">Direction</span><div class="seg" id="seg-dir"></div></div>
+        <div class="row"><span class="rk">Sound</span><div class="seg" id="seg-sound"></div></div>
+      </div>
     </div>
-    <p class="muted" id="mode-note"></p>
+    <div class="mpanel" data-panel="helpers" role="tabpanel" hidden>
+      <p class="mnote" id="helpers-note">Helpers are only at the <b>Newbie</b> table.<button type="button" id="helpers-use">Use Newbie</button></p>
+      <div class="row helpers" id="helpers">
+        <label><input type="checkbox" id="h-letters" checked>Letter names</label>
+        <label><input type="checkbox" id="h-ear" checked>👂 Listen to each card</label>
+        <label><input type="checkbox" id="h-steps" checked>Count the steps</label>
+        <label><input type="checkbox" id="h-piano" checked>Piano strip</label>
+      </div>
+    </div>
   </section>
 
   <section class="panel">
@@ -483,17 +543,19 @@ button.big:not(:disabled) { animation: rise .5s 1.5s both, glow 1.4s 2s ease-in-
     <p class="muted" id="poster-count"></p>
     <div class="posters wall-big" id="home-posters"></div>
   </section>
+</div>
 
-  <section class="panel howto">
-    <h2 class="ph">How to play</h2>
+<div class="modal" id="howto" role="dialog" aria-modal="true" aria-labelledby="howto-h" hidden>
+  <div class="mcard howto-card">
+    <h2 id="howto-h">How to play</h2>
     <ol>
-      <li>The dealer plays <b>their card</b>, then a <b>mystery note</b>. Four cards flip over. <b>Pick the card that shows the mystery note.</b></li>
-      <li>Right answers win chips, and a streak multiplies them. Wrong answers cost a chip.</li>
-      <li>Every town has <b>6 hands</b>, a visit from <b>Crooked Clara</b> (is she playing fair?), then a <b>High Noon</b> showdown with an Interval Outlaw. Win it to lasso the outlaw and stamp their Wanted poster.</li>
+      <li>The dealer plays <b>their card</b>, then a <b>mystery note</b>. Cards flip over: <b>pick the card that shows the mystery note</b> (click or tap it, or press 1 to 4).</li>
+      <li>Right answers win chips, and a streak multiplies them. Wrong answers cost a chip. Every town ends at <b>High Noon</b>: beat the Interval Outlaw to stamp their Wanted poster.</li>
       <li><b>Press your luck:</b> after each town, cash out to keep your chips as your score, or ride on for bigger stakes. Go bust and you keep only half your best.</li>
-      <li>Stuck on an interval? Visit <b>Hank's Songbook</b> to hear each one with a song you know.</li>
     </ol>
-  </section>
+    <p class="wnote">Stuck on an interval? <b>Hank's Songbook</b> plays each one with a song you know. In <b>Practice</b> there are no chips and no clock.</p>
+    <button type="button" class="go" id="howto-go">Got it</button>
+  </div>
 </div>
 
 <div class="wrap" id="game" hidden>
@@ -1642,7 +1704,7 @@ function go(v) {
   if (v === 'home') { drawPosters(); updateWho(); pullPosters(); }
   refit();
 }
-function goHome() { stopClock(); S.tok++; S.phase = 'idle'; $('capture').hidden = true; $('overlay').classList.remove('on'); $('intro').classList.remove('on'); if (S.stingBus) { S.stingBus.disconnect(); S.stingBus = null; } go('home'); }
+function goHome() { closeDD(); stopClock(); S.tok++; S.phase = 'idle'; $('capture').hidden = true; $('overlay').classList.remove('on'); $('intro').classList.remove('on'); if (S.stingBus) { S.stingBus.disconnect(); S.stingBus = null; } go('home'); }
 
 /* ---------- Fit the table to the screen (classroom displays are wide and short) ---------- */
 // The whole table is scaled down until it fits the window's height, so nobody has to scroll mid-hand.
@@ -1693,43 +1755,114 @@ function loadSettings() {
   if (Array.isArray(d.helpers)) ['h-letters', 'h-ear', 'h-steps', 'h-piano'].forEach((id, i) => { if (typeof d.helpers[i] === 'boolean') $(id).checked = d.helpers[i]; });
 }
 function segHTML(items, cur) { return items.map(([v, l]) => `<button type="button" data-v="${v}" aria-pressed="${cur === v}">${l}</button>`).join(''); }
+// The three dropdowns: [value, title, short description] for each choice
+const DD = {
+  diff: () => Object.keys(DIFF_TITLE).map(k => [k, DIFF_TITLE[k], DIFF_DESC[k]]),
+  clef: () => [['treble', 'Treble', ''], ['bass', 'Bass', ''], ['mixed', 'Mixed', 'Treble and bass, shuffled.']],
+  mode: () => [['trail', '🤠 The trail', 'Six hands a town, a visit from Crooked Clara, then High Noon. Your score posts to the leaderboard when you cash out or go bust, if you\'re signed in.'],
+    ['practice', '🎯 Practice', 'No chips, no clock and no leaderboard. Pick the intervals you want to drill (More options).']],
+};
+const ddNow = name => DD[name]().find(o => o[0] === (name === 'diff' ? S.diff : name === 'clef' ? S.clef : S.mode)) || DD[name]()[0];
+function setChoice(name, v) {
+  if (name === 'diff') {
+    S.diff = v;
+    if (S.mode === 'practice') S.practice.ivs = [...new Set(POOLS[S.diff].filter(k => !IV[k].disg))];
+    if (S.diff === 'newbie' || S.diff === 'easy') S.practice.dir = 'up';
+  }
+  if (name === 'clef') S.clef = v;
+  if (name === 'mode') { S.mode = v; if (v === 'practice') openMore('practice'); }
+  saveSettings(); drawHome(); drawPosters();
+}
+function closeDD() { document.querySelectorAll('.dd-menu').forEach(m => m.remove()); document.querySelectorAll('.dd .sel').forEach(b => b.setAttribute('aria-expanded', 'false')); }
+function openMore(tab) { $('more').hidden = false; $('more-btn').setAttribute('aria-expanded', 'true'); if (tab) showMoreTab(tab); }
+function showMoreTab(t) {
+  document.querySelectorAll('.mtabs [data-tab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === t)));
+  document.querySelectorAll('.mpanel').forEach(p => { p.hidden = p.dataset.panel !== t; });
+}
+document.querySelectorAll('.dd').forEach(dd => {
+  const n = dd.dataset.name, b = document.createElement('button');
+  b.type = 'button'; b.className = 'sel'; b.id = `dd-${n}-b`;
+  b.setAttribute('aria-haspopup', 'listbox'); b.setAttribute('aria-expanded', 'false'); b.setAttribute('aria-labelledby', `dd-${n}-l dd-${n}-b`);
+  dd.append(b);
+});
 function drawHome() {
-  $('diffs').innerHTML = Object.keys(DIFF_TITLE).map(k => `<button type="button" data-diff="${k}" aria-pressed="${S.diff === k}"><b>${DIFF_TITLE[k]}</b><small>${DIFF_DESC[k]}</small></button>`).join('');
-  $('seg-clef').innerHTML = segHTML([['treble', 'Treble'], ['bass', 'Bass'], ['mixed', 'Mixed']], S.clef);
-  $('seg-mode').innerHTML = segHTML([['trail', '🤠 The trail'], ['practice', '🎯 Practice']], S.mode);
+  document.querySelectorAll('.dd').forEach(dd => { dd.querySelector('.sel').textContent = ddNow(dd.dataset.name)[1]; });
   $('seg-dir').innerHTML = segHTML([['up', 'Up ↑'], ['down', 'Down ↓'], ['both', 'Both']], S.practice.dir);
   $('seg-sound').innerHTML = segHTML([['mel', 'One after the other'], ['harm', 'Both at once'], ['both', 'Mixed']], S.practice.sound);
   const keys = PRACTICE_KEYS.concat(S.diff === 'expert' || S.practice.ivs.some(k => IV[k].disg) ? DISGUISE_KEYS : []);
   $('ivpick').innerHTML = keys.map(k => `<label><input type="checkbox" data-iv="${k}" ${S.practice.ivs.includes(k) ? 'checked' : ''}>${SHORT(k)} · ${IV[k].name}</label>`).join('');
-  $('helpers').hidden = S.diff !== 'newbie';
-  $('practice-set').hidden = S.mode !== 'practice';
-  $('start-btn').textContent = S.mode === 'practice' ? 'Start practice 🎯' : 'Deal me in 🤠';
-  $('mode-note').textContent = S.mode === 'practice'
-    ? 'No chips, no clock and no leaderboard. Pick the intervals you want to drill.'
-    : 'Six hands a town, a visit from Crooked Clara, then High Noon. Your score posts to the leaderboard when you cash out or go bust, if you\'re signed in.';
+  const prac = S.mode === 'practice';
+  $('helpers').hidden = S.diff !== 'newbie'; $('helpers-note').hidden = S.diff === 'newbie';
+  $('practice-set').hidden = !prac; $('practice-note').hidden = prac;
+  $('start-btn').textContent = prac ? 'Start practice 🎯' : 'Deal me in 🤠';
+  $('deal-title').innerHTML = prac ? 'Ready to practice, <span>partner?</span>' : 'Ready to play, <span>partner?</span>';
+  const ivs = S.practice.ivs, what = ivs.length === 1 ? histLabel(ivs[0]) : `${ivs.length} intervals`;
+  $('deal-sum').innerHTML = `<b>${DIFF_TITLE[S.diff]}</b> · ${ddNow('clef')[1]} · ${prac ? `Practice · ${esc(what)}` : 'The trail'}`;
 }
-$('home').addEventListener('click', e => {
-  const d = e.target.closest('[data-diff]'), sg = e.target.closest('.seg button');
-  if (d) {
-    S.diff = d.dataset.diff;
-    if (S.mode === 'practice') S.practice.ivs = [...new Set(POOLS[S.diff].filter(k => !IV[k].disg))];
-    if (S.diff === 'newbie' || S.diff === 'easy') S.practice.dir = 'up';
-  } else if (sg) {
-    const id = sg.parentElement.id, v = sg.dataset.v;
-    if (id === 'seg-clef') S.clef = v;
-    if (id === 'seg-mode') S.mode = v;
-    if (id === 'seg-dir') S.practice.dir = v;
-    if (id === 'seg-sound') S.practice.sound = v;
-  } else return;
-  saveSettings(); drawHome(); drawPosters();
+$('quick').addEventListener('click', e => {
+  const opt = e.target.closest('.dd-menu button'), sel = e.target.closest('.dd .sel');
+  if (opt) { const dd = opt.closest('.dd'); closeDD(); setChoice(dd.dataset.name, opt.dataset.v); dd.querySelector('.sel').focus(); return; }
+  if (!sel) return;
+  const open = sel.getAttribute('aria-expanded') === 'true'; closeDD(); if (open) return;
+  const name = sel.closest('.dd').dataset.name, cur = ddNow(name)[0], m = document.createElement('div');
+  m.className = 'dd-menu'; m.setAttribute('role', 'listbox'); m.setAttribute('aria-labelledby', `dd-${name}-l`);
+  m.innerHTML = DD[name]().map(([v, t, d]) => `<button type="button" role="option" data-v="${v}" aria-selected="${v === cur}"><b>${t}</b>${d ? `<small>${d}</small>` : ''}</button>`).join('');
+  sel.after(m); sel.setAttribute('aria-expanded', 'true');
+  // short screens (Chromebooks): open upward over the table when there's more room above
+  const r = m.getBoundingClientRect(), above = sel.getBoundingClientRect().top;
+  if (r.bottom > innerHeight && above > innerHeight - r.top) m.classList.add('up');
+  (m.querySelector('[aria-selected="true"]') || m.firstElementChild).focus();
+});
+$('quick').addEventListener('keydown', e => {
+  const m = e.target.closest('.dd-menu'); if (!m) return;
+  const items = [...m.querySelectorAll('button')], i = items.indexOf(document.activeElement);
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); items[(i + (e.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length].focus(); }
+  if (e.key === 'Escape' || e.key === 'Tab') { if (e.key === 'Escape') e.preventDefault(); const sel = m.parentNode.querySelector('.sel'); closeDD(); if (e.key === 'Escape') sel.focus(); }
+});
+document.addEventListener('click', e => { if (!e.target.closest('.dd')) closeDD(); });
+$('more-btn').addEventListener('click', () => {
+  if (!$('more').hidden) { $('more').hidden = true; $('more-btn').setAttribute('aria-expanded', 'false'); return; }
+  openMore(S.mode !== 'practice' && S.diff === 'newbie' ? 'helpers' : 'practice');
+});
+document.querySelector('.mtabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) showMoreTab(b.dataset.tab); });
+$('practice-use').addEventListener('click', () => setChoice('mode', 'practice'));
+$('helpers-use').addEventListener('click', () => setChoice('diff', 'newbie'));
+$('more').addEventListener('click', e => {
+  const sg = e.target.closest('.seg button'); if (!sg) return;
+  const id = sg.parentElement.id, v = sg.dataset.v;
+  if (id === 'seg-dir') S.practice.dir = v;
+  if (id === 'seg-sound') S.practice.sound = v;
+  saveSettings(); drawHome();
 });
 $('ivpick').addEventListener('change', () => {
   const ivs = [...$('ivpick').querySelectorAll('input:checked')].map(i => i.dataset.iv);
   if (!ivs.length) { toast('Pick at least one interval'); drawHome(); return; }
-  S.practice.ivs = ivs; saveSettings();
+  S.practice.ivs = ivs; saveSettings(); drawHome();
 });
 ['h-letters', 'h-ear', 'h-steps', 'h-piano'].forEach(id => $(id).addEventListener('change', saveSettings));
-$('start-btn').addEventListener('click', () => { ac(); startRun(); });
+// How to play: shown once before a player's very first game, and any time from the link
+const HOWTO_KEY = 'earshot_howto_v1';
+let howtoThen = null;
+function showHowTo(then) {
+  howtoThen = then; closeDD();
+  $('howto-go').textContent = then ? (S.mode === 'practice' ? 'Got it · Start practice' : 'Got it · Deal me in') : 'Got it';
+  $('howto').hidden = false; setTimeout(() => $('howto-go').focus(), 30);
+}
+function closeHowTo(go) {
+  $('howto').hidden = true; try { localStorage.setItem(HOWTO_KEY, '1'); } catch {}
+  const then = howtoThen; howtoThen = null;
+  if (go && then) then(); else $('start-btn').focus();
+}
+$('howto-go').addEventListener('click', () => closeHowTo(true));
+$('howto').addEventListener('click', e => { if (e.target === $('howto')) closeHowTo(false); });
+$('howto-btn').addEventListener('click', () => showHowTo(null));
+function dealPressed() {
+  ac();
+  let seen = true; try { seen = !!localStorage.getItem(HOWTO_KEY); } catch {}
+  if (!seen) return showHowTo(() => startRun());
+  startRun();
+}
+$('start-btn').addEventListener('click', dealPressed);
 $('board-btn').addEventListener('click', () => openBoard());
 $('songbook-btn-home').addEventListener('click', openBook);
 $('who-btn').addEventListener('click', () => showWelcome(true));
@@ -1767,6 +1900,9 @@ $('piano').addEventListener('pointerdown', e => { const k = e.target.closest('[d
 $('cashout').addEventListener('click', () => { if (!(S.phase === 'idle' || S.phase === 'result')) return; say('Riding off into the sunset with your winnings, are we?'); endRun(false); });
 $('practice-end').addEventListener('click', endPractice);
 document.addEventListener('keydown', e => {
+  if (!$('howto').hidden) { if (e.key === 'Escape') closeHowTo(false); return; }
+  // the start screen: Enter deals, unless a button, link or dropdown has the keyboard
+  if (view() === 'home' && e.key === 'Enter' && $('welcome').hidden && !e.target.closest('input, textarea, button, a, .dd-menu')) { e.preventDefault(); dealPressed(); return; }
   if (e.target.closest('input, textarea') || view() !== 'game' || !$('welcome').hidden) return;
   if (!$('capture').hidden) { if (e.key === 'Enter' && !$('cap-go').disabled) { e.preventDefault(); $('cap-go').click(); } return; }
   if (e.key === 'Enter') { const b = document.querySelector('#intro.on .go:not([disabled])') || (!$('intro').classList.contains('on') && !$('overlay').classList.contains('on') && document.querySelector('#actions .go')); if (b) { e.preventDefault(); b.click(); } return; }
