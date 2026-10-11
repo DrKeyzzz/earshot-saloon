@@ -258,6 +258,14 @@ a.btnlink:hover { border-color: var(--gold); }
 .ivpick { display: flex; flex-wrap: wrap; gap: 6px; }
 .ivpick label { display: inline-flex; gap: 6px; align-items: center; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--rail); background: var(--plank); font-weight: 600; font-size: 14px; cursor: pointer; }
 .ivpick input { accent-color: var(--gold); }
+.mixnote { font-size: 14px; }
+/* after a miss: "You picked" vs "It was", lit while each one plays */
+.cmp { width: 100%; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 10px; }
+.cmp span { padding: 4px 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,.25); color: var(--feltink); font-size: 15px; font-weight: 600; transition: background .2s, border-color .2s; }
+.cmp span.on { border-color: var(--gold); background: rgba(0,0,0,.28); }
+html[data-skin="day"] .cmp span { border-color: rgba(0,0,0,.2); }
+html[data-skin="day"] .cmp span.on { border-color: var(--focus); background: rgba(255,255,255,.55); }
+@media (prefers-reduced-motion: reduce) { .cmp span { transition: none; } }
 .ivpick label:has(input:checked) { border-color: var(--gold); color: var(--gold-t); }
 .posters.wall-big { flex-wrap: wrap; overflow: visible; }
 .posters.wall-big .poster { width: 84px; }
@@ -618,6 +626,7 @@ html[data-skin="day"] .skin-pop { box-shadow: 0 14px 30px -10px rgba(90,60,20,.4
       <p class="mnote" id="practice-note">These choices are used when <b>Mode</b> is Practice.<button type="button" id="practice-use">Use Practice</button></p>
       <div id="practice-set">
         <div class="row"><span class="rk">Intervals</span><div class="ivpick" id="ivpick"></div></div>
+        <p class="mnote mixnote">Your picks come up about half the time; others mix in so you have to listen.</p>
         <div class="row"><span class="rk">Direction</span><div class="seg" id="seg-dir"></div></div>
         <div class="row"><span class="rk">Sound</span><div class="seg" id="seg-sound"></div></div>
       </div>
@@ -978,6 +987,7 @@ const S = {
   noon: null, caught: {}, seen: {},
   stats: null,
   forceDisguise: false, tok: 0,
+  lastKeys: [], cmp: null,
 };
 const freshStats = () => ({ total: 0, right: 0, byIv: {}, byKey: {}, mix: {}, bluff: [0, 0], bestStreak: 0, lassoed: [], t0: Date.now() });
 S.stats = freshStats();
@@ -1024,10 +1034,10 @@ function buildHand(forceKey, opts = {}) {
   const P = S.mode === 'practice' ? S.practice : null;
   // practice: answers come from the picked intervals; wrong cards from the difficulty's set plus the picks
   const pool = P ? [...new Set([...POOLS[S.diff], ...P.ivs])] : POOLS[S.diff];
-  const ansPool = P ? P.ivs : pool;
+  const ansPool = P ? P.ivs : pool, pk = P && !forceKey ? practiceKey(P.ivs) : null;
   for (let t = 0; t < 2000; t++) {
     const clef = S.clef === 'mixed' ? pick(['treble', 'bass']) : S.clef;
-    const key = forceKey || pick(ansPool);
+    const key = forceKey || (pk && t < 1500 ? pk : pick(ansPool));
     const dir = P ? (P.dir === 'up' ? 1 : P.dir === 'down' ? -1 : pick([1, -1])) : (S.diff === 'newbie' || S.diff === 'easy') ? 1 : pick([1, -1]);
     const ref = randomRef();
     if (!inRange(ref, clef)) continue;
@@ -1044,9 +1054,27 @@ function buildHand(forceKey, opts = {}) {
     if (dec.length < need) continue;
     const cards = shuffle([{ k: key, n: ans, right: true }, ...dec.map(c => ({ k: c.k, n: c.n, right: false }))]);
     const harmonic = !opts.noHarm && (P ? (P.sound === 'harm' || (P.sound === 'both' && Math.random() < .5)) : S.diff === 'expert' && Math.random() < .5);
+    if (P) S.lastKeys = [key, ...S.lastKeys].slice(0, 2);
     return { clef, ref, key, dir, ans, cards, harmonic };
   }
   return null;
+}
+
+// Practice: the picks are the answer about half the time; the rest are the difficulty's other intervals.
+// With only one or two picked sounds, intervals a semitone or two away (the easiest mix-ups) join in too,
+// so a single picked interval can't be answered without listening. Never the same answer 3 times running.
+// Intervals that sound the same as a pick (A4/d5) don't count as others; each sound counts once.
+function practiceKey(picks) {
+  const same = k => picks.some(p => IV[p].semis === IV[k].semis), last = S.lastKeys;
+  const once = ks => ks.filter((k, i) => ks.findIndex(j => IV[j].semis === IV[k].semis) === i);
+  const few = new Set(picks.map(k => IV[k].semis)).size < 3;
+  const near = few ? once(PRACTICE_KEYS.filter(k => !same(k) && picks.some(p => Math.abs(IV[k].semis - IV[p].semis) <= 2))) : [];
+  const others = once([...POOLS[S.diff].filter(k => !IV[k].disg && !same(k)), ...near]);
+  const ok = k => !(last.length === 2 && last[0] === k && last[1] === k);
+  let list = !others.length || Math.random() < .5 ? picks : near.length && Math.random() < .5 ? near : others;
+  list = list.filter(ok);
+  if (!list.length) list = [...picks, ...others].filter(ok);
+  return pick(list.length ? list : picks);
 }
 
 /* ---------- Staff drawing ---------- */
@@ -1385,6 +1413,7 @@ function startTown() {
   setActions(`<button class="go" type="button" data-act="deal">Deal ↵</button>`);
 }
 function nextStep() {
+  stopCompare();
   if (S.mode === 'practice') return dealRegular();
   if (S.handNo >= 10) { S.town++; startTown(); return; }
   if (S.handNo === 6) return introBluff();
@@ -1493,16 +1522,40 @@ function choose(i) {
   st.bestStreak = Math.max(st.bestStreak, S.streak);
   S.best = Math.max(S.best, S.bank);
   say(line);
-  { const t = ac().currentTime + (right ? 1.25 : .7); if (h.harmonic) { tone(midiOf(h.ref), t); tone(midiOf(h.ans), t); } else { tone(midiOf(h.ref), t); tone(midiOf(h.ans), t + .7); } }
+  // a miss (not at High Noon, where the interval must stay hidden): hear what you picked, then what it was
+  S.cmp = !right && i >= 0 && !S.noon ? { n: h.cards[i].n, lbl: `${cap(IV[h.cards[i].k].name)} ${dirArrow(h)}`, ans: `${cap(iv.name)} ${dirArrow(h)}`, on: -1 } : null;
+  if (S.cmp) playCompare();
+  else { const t = ac().currentTime + (right ? 1.25 : .7); if (h.harmonic) { tone(midiOf(h.ref), t); tone(midiOf(h.ans), t); } else { tone(midiOf(h.ref), t); tone(midiOf(h.ans), t + .7); } }
   S.handNo++;
   drawHUD();
   afterHand();
 }
+const dirArrow = h => h.harmonic ? '(together)' : h.dir > 0 ? '↑' : '↓';
+// The comparison plays on its own bus (it doesn't hold up the next hand), so Next hand can cut it off.
+function playCompare() {
+  const c = S.cmp, h = S.hand; if (!c) return;
+  stopCompare(true);
+  const tok = c.tok = (c.tok || 0) + 1, bus = S.cmpBus = ac().createGain(); bus.connect(MASTER);
+  const t0 = Math.max(ac().currentTime + .05, quietAt + .15) + (c.played ? 0 : .55), now = ac().currentTime;
+  const pair = (b, t) => { if (h.harmonic) { tone(midiOf(h.ref), t, 1.2, .32, bus); tone(midiOf(b), t, 1.2, .32, bus); } else { tone(midiOf(h.ref), t, 1.2, .32, bus); tone(midiOf(b), t + .6, 1.2, .32, bus); } };
+  pair(c.n, t0); pair(h.ans, t0 + 1.6); c.played = true;
+  const at = (sec, fn) => setTimeout(() => { if (S.cmp === c && c.tok === tok) fn(); }, (sec - now) * 1000);
+  const light = (k, hl) => { c.on = k; document.querySelectorAll('#actions .cmp span').forEach((el, j) => el.classList.toggle('on', j === k)); drawPiano(hl); };
+  at(t0, () => light(0, { ref: midiOf(h.ref), card: midiOf(c.n) }));
+  at(t0 + 1.6, () => light(1, { ref: midiOf(h.ref), ans: midiOf(h.ans) }));
+  at(t0 + 3.1, () => { c.on = -1; document.querySelectorAll('#actions .cmp span').forEach(el => el.classList.remove('on')); });
+}
+function stopCompare(keep) {
+  if (S.cmpBus) { const b = S.cmpBus; S.cmpBus = null; try { b.gain.setTargetAtTime(0, ac().currentTime, .03); setTimeout(() => b.disconnect(), 300); } catch {} }
+  if (!keep && S.cmp) { S.cmp = null; }
+}
+const cmpHTML = () => S.cmp ? `<div class="cmp" aria-live="polite"><span${S.cmp.on === 0 ? ' class="on"' : ''}>✗ You picked: ${S.cmp.lbl}</span><span${S.cmp.on === 1 ? ' class="on"' : ''}>✓ It was: ${S.cmp.ans}</span></div>` : '';
+const cmpBtn = () => S.cmp ? `<button type="button" data-act="cmp-again">♪ Hear both again</button>` : '';
 function afterHand() {
   if (S.mode === 'practice') {
     const tok = S.tok;
-    setActions(`<span class="hint">&nbsp;</span>`);
-    setTimeout(() => { if (tok === S.tok && S.phase === 'result') setActions(`<button class="go" type="button" data-act="next">Next hand ↵</button>`); }, Math.max(600, (quietAt - ac().currentTime) * 1000));
+    setActions(`${cmpHTML()}<span class="hint">&nbsp;</span>`);
+    setTimeout(() => { if (tok === S.tok && S.phase === 'result') setActions(`${cmpHTML()}${cmpBtn()}<button class="go" type="button" data-act="next">Next hand ↵</button>`); }, Math.max(600, (quietAt - ac().currentTime) * 1000));
     return;
   }
   if (S.noon && S.noon.done >= 3) {
@@ -1541,13 +1594,13 @@ function afterHand() {
     if (S.diff === 'newbie' && S.town === 0) { S.bank = chipVal(); drawHUD(); setTimeout(() => say("The house spots you a chip, greenhorn. Nobody goes bust in the first town."), 1500); }
     else { S.phase = 'over'; setTimeout(() => { say("You're <b>busted</b>, partner."); endRun(true); }, 1500); return; }
   }
-  setActions(`<span class="hint">&nbsp;</span>`);
+  setActions(`${cmpHTML()}<span class="hint">&nbsp;</span>`);
   const tok = S.tok;
   const nextLbl = S.handNo === 6 ? 'Here comes Clara…' : S.handNo === 7 ? 'It\'s High Noon' : 'Next hand';
   const tipAttr = S.handNo === 6 ? ` data-tip="${TIPS.clara}"` : S.handNo === 7 ? ` data-tip="${TIPS.noon}"` : '';
   setTimeout(() => {
     if (tok !== S.tok || S.phase !== 'result') return;
-    setActions(`<button class="go" type="button" data-act="next"${tipAttr}>${nextLbl} ↵</button>`);
+    setActions(`${cmpHTML()}${cmpBtn()}<button class="go" type="button" data-act="next"${tipAttr}>${nextLbl} ↵</button>`);
   }, Math.max(600, (quietAt - ac().currentTime) * 1000));
 }
 const cap = s => s[0].toUpperCase() + s.slice(1);
@@ -1795,7 +1848,7 @@ function endRun(busted) {
   showReport();
   if (getProfile() && st.total > 0) saveRun();
 }
-function endPractice() { stopClock(); S.tok++; S.phase = 'over'; syncTray(); lastRun = null; showReport(); }
+function endPractice() { stopCompare(); stopClock(); S.tok++; S.phase = 'over'; syncTray(); lastRun = null; showReport(); }
 // intervals answered below 80% this run, for "Practice these"
 function weakKeys() { return Object.entries(S.stats.byKey).filter(([, [r, t]]) => t && r / t < .8).map(([k]) => k); }
 function showReport() {
@@ -1815,7 +1868,7 @@ function showReport() {
     <h3>Mix-ups</h3>${mix}
     <div class="btns">
       <button class="go" type="button" data-act="again-run">${practice ? 'Keep practicing' : 'Ride again 🐎'}</button>
-      ${weak.length ? `<button type="button" data-act="practice-these" data-tip="Practice only the intervals you got less than 80% right: ${weak.map(k => SHORT(k)).join(', ')}">🎯 Practice these (${weak.length})</button>` : ''}
+      ${weak.length ? `<button type="button" data-act="practice-these" data-tip="Focus on the intervals you got less than 80% right (others mix in, so you have to listen): ${weak.map(k => SHORT(k)).join(', ')}">🎯 Practice these (${weak.length})</button>` : ''}
       ${practice ? '' : '<button type="button" data-act="board">🏆 Leaderboard</button>'}
       <button type="button" data-act="home">Back to the saloon door</button>
     </div>`;
@@ -1842,7 +1895,7 @@ function practiceThese() {
   const weak = weakKeys(); if (!weak.length) return;
   S.mode = 'practice'; S.practice = { ivs: weak, dir: S.diff === 'newbie' || S.diff === 'easy' ? 'up' : 'both', sound: 'mel' };
   saveSettings(); drawHome(); startRun();
-  toast(`🎯 Practicing ${weak.map(k => SHORT(k)).join(', ')}`, 3200);
+  toast(`🎯 Focusing on ${weak.map(k => SHORT(k)).join(', ')}`, 3200);
 }
 
 /* ---------- Screens ---------- */
@@ -1857,7 +1910,7 @@ function go(v) {
   if (v === 'home') { drawPosters(); updateWho(); pullPosters(); }
   refit();
 }
-function goHome() { closeDD(); stopClock(); S.tok++; S.phase = 'idle'; $('capture').hidden = true; $('overlay').classList.remove('on'); $('intro').classList.remove('on'); if (S.stingBus) { S.stingBus.disconnect(); S.stingBus = null; } go('home'); }
+function goHome() { stopCompare(); closeDD(); stopClock(); S.tok++; S.phase = 'idle'; $('capture').hidden = true; $('overlay').classList.remove('on'); $('intro').classList.remove('on'); if (S.stingBus) { S.stingBus.disconnect(); S.stingBus = null; } go('home'); }
 
 /* ---------- Fit the table to the screen (classroom displays are wide and short) ---------- */
 // The whole table is scaled down until it fits the window's height, so nobody has to scroll mid-hand.
@@ -2056,6 +2109,7 @@ document.addEventListener('click', e => {
   const a = t.dataset.act;
   if (a === 'deal' || a === 'next') return nextStep();
   if (a === 'bluffplay') return bluffPlay();
+  if (a === 'cmp-again') return playCompare();
   if (a === 'cashout') return endRun(false);
   if (a === 'again-run') return startRun();
   if (a === 'practice-these') return practiceThese();
