@@ -826,36 +826,34 @@ const OUTLAWS = {
 const OUT_ORDER = ['m2', 'M2', 'm3', 'M3', 'P4', 'TT', 'P5', 'm6', 'M6', 'm7', 'M7', 'P8'];
 const TOWNS = ['Tumbleweed Flats', 'Minor Mesa', 'Perfect Fifth Flats', 'Half-Step Hollow', 'Tritone Gulch', 'Leading-Tone Ridge', 'Octave Canyon', 'Dissonance Draw'];
 
-// Hank's songbook: one or two songs per interval, a song young kids know first, then a pop or movie one.
+// Hank's songbook: up to two songs per interval, a song young kids know first, then a pop or movie one.
 // Each song: [title, offsets in semitones from the first note of the interval, lengths in seconds, options].
-// Old folk and classical tunes play a phrase; newer songs play only the first few notes, never the whole tune.
-// check: true marks a pick Mr. Milnes should confirm by ear (or swap for a song his students know).
+// Every song plays its whole opening phrase, so it's recognizable. An empty list means no song is picked yet:
+// Hank plays just the interval. check: true marks a pick Mr. Milnes should confirm by ear.
 const HANK = {
   up: {
-    m2: [['Jaws', [0, 1, 0, 1, 0, 1], [.5, .5, .35, .35, .22, .5]],
-         ['The Pink Panther', [0, 1, 3, 4], [.3, .7, .3, .9], { check: true }]],
-    M2: [['Happy Birthday', [0, 0, 2, 0, 5, 4], [.3, .15, .5, .5, .5, 1]],
-         ['Never Gonna Give You Up', [0, 2, 5, 2], [.2, .2, .2, .6], { check: true }]],
+    m2: [['Jaws', [0, 1, 0, 1, 0, 1, 0, 1, 0, 1], [.5, .5, .4, .4, .3, .3, .2, .2, .15, .6]],
+         ['The Pink Panther', [0, 1, 3, 4, 0, 1, 3, 4, 9, 8, 1, 4, 8, 7], [.25, .75, .25, .75, .22, .22, .22, .22, .22, .22, .22, .22, .22, 1.2], { check: true }]],
+    M2: [['Happy Birthday', [0, 0, 2, 0, 5, 4, 0, 0, 2, 0, 7, 5], [.3, .15, .5, .5, .5, 1, .3, .15, .5, .5, .5, 1]],
+         ['Never Gonna Give You Up', [0, 2, 5, 2, 9, 9, 7], [.15, .15, .15, .15, .45, .45, .9], { check: true }]],
     m3: [["Brahms' Lullaby", [0, 0, 3, 0, 0, 3, 0, 3, 8, 7, 5, 5, 3], [.25, .25, .9, .25, .25, .9, .25, .25, .5, .5, .4, .3, .9]],
-         ['Seven Nation Army', [0, 0, 3], [.45, .15, .9]]],
-    M3: [['When the Saints Go Marching In', [0, 4, 5, 7], [.3, .3, .3, 1.2]],
-         ['Some Nights (fun.)', [0, 4], [.4, 1], { check: true }]],
-    P4: [['Here Comes the Bride', [0, 5, 5, 5], [.5, .38, .14, 1]],
-         ["Hedwig's Theme (Harry Potter)", [0, 5, 8], [.45, .65, 1]]],
-    TT: [['The Simpsons theme', [0, 6], [.5, 1.2], { check: true }],
-         ['Maria (West Side Story)', [0, 6, 7], [.4, .4, 1]]],
+         ['Seven Nation Army', [0, 0, 3, 0, -2, -4, -5], [.45, .15, .3, .3, .15, .6, .9]]],
+    M3: [['When the Saints Go Marching In', [0, 4, 5, 7, 0, 4, 5, 7], [.3, .3, .3, 1.2, .3, .3, .3, 1.2]],
+         ['Kumbaya', [0, 4, 7, 7, 7, 9, 9, 7], [.3, .3, .5, .3, .3, .5, .3, .9], { check: true }]],
+    P4: [['Here Comes the Bride', [0, 5, 5, 5, 0, 7, 4, 5], [.5, .38, .14, 1, .5, .38, .14, 1]],
+         ["Hedwig's Theme (Harry Potter)", [0, 5, 8, 7, 5, 12, 10, 7], [.35, .5, .18, .35, .7, .35, 1.05, 1.05]]],
+    // The Simpsons: the choir's "The Simp-sons", then the theme's opening line (C E F♯ A G E C A F♯ F♯ F♯ G)
+    TT: [['The Simpsons theme', [0, 6, 0, 4, 6, 9, 7, 4, 0, -3, -6, -6, -6, -5], [.35, 1.3, .45, .3, .3, .3, .45, .3, .3, .3, .15, .15, .15, .8], { check: true }],
+         ['Maria (West Side Story)', [0, 6, 7], [.4, .4, 1.2]]],
     P5: [['Twinkle, Twinkle, Little Star', [0, 0, 7, 7, 9, 9, 7], [.35, .35, .35, .35, .35, .35, .8]],
-         ['Star Wars (main theme)', [-5, -5, -5, 0, 7], [.15, .15, .15, .8, 1], { at: 3 }]],
-    m6: [['The Entertainer', [-2, -1, 0, 8, 0, 8, 0, 8], [.2, .2, .3, .45, .3, .45, .3, .9], { at: 2 }],
-         ['We Are Young (fun.), chorus', [0, 8], [.4, 1], { check: true }]],
-    M6: [['Jingle Bells (the verse)', [0, 9, 7, 5, 0], [.3, .3, .3, .3, .9], { check: true }],
-         ['Call Me Maybe', [0, 9], [.3, 1], { check: true }]],
-    m7: [['Star Trek theme', [0, 10], [.6, 1.4], { check: true }],
-         ['Somewhere (West Side Story)', [0, 10, 9], [.45, .6, 1]]],
-    M7: [['Pure Imagination (Wonka)', [0, 11], [.5, 1.2], { check: true }],
-         ['Take On Me (chorus)', [0, 11, 12], [.4, .4, .9], { check: true }]],
+         ['Star Wars (main theme)', [-5, -5, -5, 0, 7, 5, 4, 2, 12, 7, 5, 4, 2, 12, 7, 5, 4, 5, 2], [.15, .15, .15, .8, .8, .15, .15, .15, .8, .5, .15, .15, .15, .8, .5, .15, .15, .15, 1.1]]],
+    m6: [['The Entertainer', [-2, -1, 0, 8, 0, 8, 0, 8], [.2, .2, .3, .45, .3, .45, .3, .9]]],
+    M6: [['Jingle Bells (the verse)', [0, 9, 7, 5, 0, 0, 0, 9, 7, 5, 2], [.3, .3, .3, .3, .9, .15, .15, .3, .3, .3, .9]],
+         ['My Bonnie Lies Over the Ocean', [0, 9, 7, 5, 7, 5, 2, 0], [.35, .5, .25, .35, .35, .35, .35, .9]]],
+    m7: [['Somewhere (West Side Story)', [0, 10, 9], [.45, .6, 1.2]]],
+    M7: [['Take On Me (chorus)', [0, 11, 12], [.4, .4, 1.1], { check: true }]],
     P8: [['Somewhere Over the Rainbow', [0, 12, 11, 7, 9, 11, 12], [.6, .6, .3, .15, .15, .3, .7]],
-         ["Singin' in the Rain", [0, 12], [.4, 1.2], { check: true }]],
+         ['The Christmas Song (Chestnuts Roasting)', [0, 12, 11, 9, 7, 5, 4, 2], [.3, .6, .3, .3, .3, .3, .3, .9], { check: true }]],
   },
   down: {
     m2: [['Joy to the World', [0, -1, -3, -5, -7, -8, -10, -12], [.6, .45, .15, .9, .3, .6, .6, 1]],
@@ -863,19 +861,22 @@ const HANK = {
     M2: [['Mary Had a Little Lamb', [0, -2, -4, -2, 0, 0, 0], [.4, .2, .4, .4, .4, .4, .8]],
          ['Three Blind Mice', [0, -2, -4, 0, -2, -4], [.45, .45, .9, .45, .45, .9]]],
     m3: [['Rain, Rain, Go Away', [0, -3, 0, 0, -3], [.4, .6, .3, .3, .8]],
-         ['Hey Jude', [0, -3], [.55, 1.1]]],
+         ['Hey Jude', [0, -3, -3, 0, 2, -5], [.55, 1, .3, .3, .3, 1.1]]],
     M3: [['Swing Low, Sweet Chariot', [0, -4, -4], [.6, .3, 1]],
-         ["Beethoven's 5th", [0, 0, 0, -4], [.18, .18, .18, 1.2]]],
+         ["Beethoven's 5th", [0, 0, 0, -4, -2, -2, -2, -5], [.18, .18, .18, 1, .18, .18, .18, 1.3]]],
     P4: [['Shave and a Haircut (the knock)', [0, -5, -5, -3, -5, -1, 0], [.3, .15, .15, .3, .75, .3, .6]],
          ['Eine kleine Nachtmusik (Mozart)', [0, -5, 0, -5, 0, -5, 0, 4, 7], [.4, .2, .4, .2, .2, .2, .2, .2, .6]]],
-    TT: [['Purple Haze (guitar riff)', [0, -6], [.35, .9], { check: true }]],
-    P5: [['The Flintstones', [0, -7, 0], [.45, .45, .9]]],
-    m6: [['Love Story (theme)', [0, -8], [.5, 1.1], { check: true }]],
-    M6: [["Nobody Knows the Trouble I've Seen", [0, -9], [.5, 1.1], { check: true }],
-         ['Man in the Mirror (chorus)', [0, -9], [.4, 1.1], { check: true }]],
-    m7: [['An American in Paris', [0, -10], [.4, 1], { check: true }]],
-    M7: [['Have Yourself a Merry Little Christmas', [0, -11], [.5, 1.2], { check: true }]],
-    P8: [['Willow Weep for Me', [0, -12], [.6, 1.2], { check: true }]],
+    TT: [['Purple Haze (guitar intro)', [0, -6, 0, -6, 0, -6, 0, -6], [.28, .28, .28, .28, .28, .28, .28, .6], { check: true }]],
+    // Minuet in G (Petzold): D G A B C D G G, E C D E F♯ G G G
+    P5: [['Minuet in G', [0, -7, -5, -3, -2, 0, -7, -7, 2, -2, 0, 2, 4, 5, -7, -7], [.5, .25, .25, .25, .25, .5, .5, .6, .5, .25, .25, .25, .25, .5, .5, .9]],
+         // The Flintstones, whistled by Mr. Milnes: "Flint-stones, meet the Flint-stones" = C F, F D C F
+         ['The Flintstones', [0, -7, 5, 2, 0, -7], [.47, .85, .6, .3, .75, 1.1]]],
+    m6: [],
+    // Nobody Knows the Trouble I've Seen, from Mr. Milnes: E G A C (held), D, E E E, E (held)
+    M6: [["Nobody Knows the Trouble I've Seen", [0, -9, -7, -4, -2, 0, 0, 0, 0], [.4, .3, .3, 1.2, .3, .3, .3, .3, 1.4]]],
+    m7: [],
+    M7: [],
+    P8: [],
   },
 };
 
@@ -2430,8 +2431,10 @@ function hankSVG() {
 function drawBookRows() {
   ['up', 'down'].forEach(dir => {
     $('row-' + dir).innerHTML = BOOK_ORDER.map(k => {
-      return `<div class="ivcard"><b>${BOOK_NAME[k]} ${dir === 'up' ? '↑' : '↓'}</b>${HANK[dir][k].map((sg, i) =>
-        `<button type="button" data-book="${dir}:${k}:${i}" aria-pressed="false" aria-label="${BOOK_NAME[k]} going ${dir}: ${sg[0]}">♪ ${sg[0]}</button>`).join('')}</div>`;
+      const songs = HANK[dir][k];
+      return `<div class="ivcard"><b>${BOOK_NAME[k]} ${dir === 'up' ? '↑' : '↓'}</b>${songs.length ? songs.map((sg, i) =>
+        `<button type="button" data-book="${dir}:${k}:${i}" aria-pressed="false" aria-label="${BOOK_NAME[k]} going ${dir}: ${sg[0]}">♪ ${sg[0]}</button>`).join('')
+        : `<button type="button" data-book="${dir}:${k}:0" aria-pressed="false" aria-label="Hear a ${BOOK_NAME[k]} going ${dir}">♪ Hear the interval</button>`}</div>`;
     }).join('');
   });
 }
@@ -2448,7 +2451,7 @@ function playBook(dir, k, i = 0) {
   const ivKey = BOOK_IV[k] || k, other = spell(ref, ivKey, up ? 1 : -1) || spellAny(ref, ivKey, up ? 1 : -1);
   const base = midiOf(ref), tgt = midiOf(other);
   const name = BOOK_NAME[k].toLowerCase();
-  $('hank-say').innerHTML = `This is a <b>${name} going ${dir}</b>, like you hear in <i>${sg[0]}</i>.`;
+  $('hank-say').innerHTML = sg ? `This is a <b>${name} going ${dir}</b>, like you hear in <i>${sg[0]}</i>.` : `This is a <b>${name} going ${dir}</b>. I'm still looking for a good song for this one, so listen close.`;
   $('hank-staff').innerHTML = staffSVG({ clef: 'treble', ref, note: other, both: true });
   $('hank-staff').classList.add('on');
   document.querySelectorAll('[data-book]').forEach(b => b.setAttribute('aria-pressed', b.dataset.book === `${dir}:${k}:${i}`));
@@ -2458,7 +2461,8 @@ function playBook(dir, k, i = 0) {
   // 1. the interval
   const t1 = t; tone(base, t, 1.3, .32, BUS); tone(tgt, t + .9, 1.5, .32, BUS); t += 2.6;
   // 2. the song
-  const t2 = t; sg[1].forEach((o, i) => { tone(base + o, t, sg[2][i] + .45, .28, BUS); t += sg[2][i]; }); t += .9;
+  const t2 = t; if (sg) { sg[1].forEach((o, i) => { tone(base + o, t, sg[2][i] + .45, .28, BUS); t += sg[2][i]; }); t += .9; }
+  else { tone(base, t, 1.3, .32, BUS); tone(tgt, t + .9, 1.5, .32, BUS); t += 2.6; }   // no song yet: hear it once more
   // 3. the interval again
   const t3 = t; tone(base, t, 1.3, .32, BUS); tone(tgt, t + .9, 1.5, .32, BUS); t += 2.4;
   const now = c.currentTime;
