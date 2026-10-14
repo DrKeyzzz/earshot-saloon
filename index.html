@@ -2388,8 +2388,16 @@ function classesOf(p) {
   return list.filter(c => c && c.code).slice(0, 3);
 }
 const classNames = p => classesOf(p).map(c => c.name || c.code).join(' · ');
+/* MTG_CLASSSWITCH: a student can save up to 3 classes (p.saved) but only ONE is active (p.classes = [active]); scores, practice and tests count for the active class */
+const savedOf = p => { if (!p) return []; const l = Array.isArray(p.saved) && p.saved.length ? p.saved : classesOf(p); return l.filter(c => c && c.code).slice(0, 3); };
+const prefillOf = p => { const s = savedOf(p); return p ? [...s.filter(c => c.code === p.classCode), ...s.filter(c => c.code !== p.classCode)] : []; };
+function switchClass(code) { const p = getProfile(), s = savedOf(p), c = s.find(x => x.code === code); if (!p || !c) return; setProfile({ ...p, classCode: c.code, className: c.name || c.code, classOwner: c.owner || '', classes: [c], saved: s }); location.reload(); }
+const switchHTML = p => { const s = savedOf(p); return s.length > 1 ? `<div id="w-switchrow" role="group" aria-label="Switch class" style="margin:0 0 14px"><div style="font-weight:700;margin-bottom:6px">Your classes (tap to switch)</div><div style="display:flex;gap:8px;flex-wrap:wrap">${s.map(c => `<button type="button" data-switch-class="${String(c.code).replace(/[^A-Za-z0-9]/g, '')}" aria-pressed="${c.code === p.classCode}" style="font:inherit;font-weight:700;padding:10px 16px;border-radius:999px;cursor:pointer;background:transparent;color:inherit;border:${c.code === p.classCode ? '4px double' : '2px solid'} currentColor">${String(c.name || c.code).replace(/[<>&"]/g, '')}${c.code === p.classCode ? ' ✓' : ''}</button>`).join('')}</div></div>` : ''; };
+const showSwitch = p => { let sw = document.getElementById('w-switch'); const f = document.getElementById('w-first') && document.getElementById('w-first').closest('form'); if (!f) return; if (!sw) { sw = document.createElement('div'); sw.id = 'w-switch'; f.prepend(sw); } sw.innerHTML = p ? switchHTML(p) : ''; };
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-switch-class]'); if (b) switchClass(b.dataset.switchClass); });
+/* /MTG_CLASSSWITCH */
 // the saved student with a new class list (the main class fields always match the first class)
-const withClasses = (p, list) => ({ ...p, classes: list, classCode: list[0] ? list[0].code : '', className: list[0] ? list[0].name : '', classOwner: list[0] ? list[0].owner : '' });
+const withClasses = (p, list) => { const act = (p && list.find(c => c.code === p.classCode)) || list[0]; return { ...p, classes: act ? [act] : [], saved: list, classCode: act ? act.code : '', className: act ? act.name : '', classOwner: act ? act.owner : '' }; };
 // player icons, shared by every game (must match iconOk() in firestore.rules)
 const ICONS = ['🎹','🎸','🎺','🪊','🎷','🥁','🎻','🪕','🎤','🎧','🎼','𝄢','🎵','🪘','🪗','⭐','🔥','🚀'];
 const ICON_SVG = {
@@ -2408,11 +2416,11 @@ function updateWho() {
   setTip($('who-btn'), p ? `Signed in as ${esc(displayName(p))} · switch student` : 'Sign in so your scores and progress are saved');
 }
 function showWelcome(keep) {
-  const p = keep ? getProfile() : null;
-  setPickedIcon(p && p.icon);
-  $('w-first').value = p ? p.first : ''; $('w-init').value = p ? p.init : ''; $('w-code').value = p ? p.classCode || '' : '';
+  const p = keep ? getProfile() : null, pf = prefillOf(p);
+  setPickedIcon(p && p.icon); showSwitch(p);
+  $('w-first').value = p ? p.first : ''; $('w-init').value = p ? p.init : ''; $('w-code').value = pf.length ? pf[0].code : '';
   $('w-solo').checked = !!(p && !p.classCode); $('w-code').disabled = $('w-solo').checked; $('w-error').textContent = '';
-  $('w-more').innerHTML = ''; classesOf(p).slice(1).forEach(c => addClassBox(c.code)); syncAddBtn();
+  $('w-more').innerHTML = ''; pf.slice(1).forEach(c => addClassBox(c.code)); syncAddBtn();
   $('welcome').hidden = false;
   setTimeout(() => $('w-first').focus(), 50);
 }
@@ -2482,11 +2490,11 @@ $('welcome').addEventListener('click', e => { if (e.target === $('welcome')) $('
 function afterWho() { updateWho(); loadPosters(); drawPosters(); syncSaveLine(); pullPosters(); }
 // keep every class's name fresh; a deleted class drops off (the next one becomes the main class)
 async function refreshClass() {
-  const p = getProfile(), list = classesOf(p); if (!list.length) return;
+  const p = getProfile(), list = savedOf(p); if (!list.length) return;
   try {
     const { fs, db } = await fb(), docs = await Promise.all(list.map(c => wait(fs.getDoc(fs.doc(db, 'classes', c.code)))));
     const keep = list.map((c, i) => docs[i].exists() ? { code: c.code, name: docs[i].data().name, owner: docs[i].data().ownerEmail || '' } : null).filter(Boolean);
-    const mainGone = keep[0]?.code !== p.classCode;
+    const mainGone = (keep.find(c => c.code === p.classCode) || keep[0])?.code !== p.classCode;
     setProfile(withClasses(p, keep));
     updateWho();
     if (mainGone) pullPosters();
