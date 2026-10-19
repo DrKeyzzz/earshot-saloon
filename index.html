@@ -572,6 +572,9 @@ html[data-skin="day"] .skin-pop { box-shadow: 0 14px 30px -10px rgba(90,60,20,.4
 .skinbtn .sw::before { content: ''; position: absolute; left: 12px; right: 12px; bottom: -14px; height: 44px; border-radius: 50%; background: var(--sw-felt); border: 4px solid var(--sw-rim); }
 @media (max-width: 640px) { .mtabs button { padding: 10px 7px 8px; font-size: 13.5px; letter-spacing: .03em; } }
 .skinbtn .sw::after { content: ''; position: absolute; left: 50%; top: 18px; width: 16px; height: 22px; margin-left: -8px; border-radius: 3px; background: var(--sw-card); box-shadow: 0 0 0 2px var(--sw-acc); }
+.instr-game { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; white-space: nowrap; }
+.instr-game select { font: inherit; font-size: 14px; padding: 6px 8px; border-radius: 8px; border: 1px solid currentColor; background: transparent; color: inherit; max-width: 170px; }
+.instr-game select option { color: #222; }
 </style>
 <!-- MTG_SOUND start: identical in every game. Master copy: Music Games/shared/mtg-sound.snippet.js (install with apply-sound.py) -->
 <script id="mtg-sound">
@@ -765,6 +768,7 @@ html[data-skin="day"] .skin-pop { box-shadow: 0 14px 30px -10px rgba(90,60,20,.4
       <button type="button" id="songbook-btn" class="twoline"><span>🎹 Hank's Songbook</span><small>Learn the intervals</small></button>
       <button type="button" id="cashout" class="twoline trail-only"><span>💰 Cash out</span><small id="cashout-amt">$100</small></button>
       <button type="button" id="practice-end" class="practice-only">End practice</button>
+      <label class="instr-game" data-tip="Change the instrument the notes play on">🎵 <select id="instr-game" aria-label="Instrument"></select></label>
       <button type="button" id="fs-btn" data-tip="Fill the whole screen (Esc to leave)">⛶ Full screen</button>
     </div>
   </header>
@@ -2362,10 +2366,10 @@ $('ivpick').addEventListener('change', () => {
 });
 ['h-letters', 'h-ear', 'h-steps', 'h-piano'].forEach(id => $(id).addEventListener('change', saveSettings));
 // Instrument: shared by every game (localStorage mtg_sound_v1); a short sample note once it has loaded
-$('instr').innerHTML = MTGSound.list().map(o => `<option value="${o.key}">${o.name}</option>`).join('');
-$('instr').value = MTGSound.get();
-$('instr').addEventListener('change', () => MTGSound.set($('instr').value));
-window.addEventListener('mtgsound', () => { $('instr').value = MTGSound.get(); preloadSound().then(() => tone(60, ac().currentTime + .05, 1.2)); });
+['instr', 'instr-game'].forEach(id => { $(id).innerHTML = MTGSound.list().map(o => `<option value="${o.key}">${o.name}</option>`).join('');
+  $(id).value = MTGSound.get();
+  $(id).addEventListener('change', () => MTGSound.set($(id).value)); });   // one picker in More options, one in the game's top bar
+window.addEventListener('mtgsound', () => { $('instr').value = $('instr-game').value = MTGSound.get(); preloadSound().then(() => tone(60, ac().currentTime + .05, 1.2)); });
 // How to play: shown once before a player's very first game, and any time from the link
 const HOWTO_KEY = 'earshot_howto_v1';
 let howtoThen = null;
