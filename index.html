@@ -2751,7 +2751,10 @@ async function indexed(shape, fresh, old) {
   return old();
 }
 async function devRows(fs, db, extra = []) {
-  try { return (await fs.getDocs(fs.query(fs.collection(db, SCORES), fs.where('dev', '==', true), ...extra))).docs; } catch { return []; }
+  // only the developer's 10 best (needs a dev + score index; until it exists, any 10 so a board never reads them all)
+  try { return (await fs.getDocs(fs.query(fs.collection(db, SCORES), fs.where('dev', '==', true), ...extra, fs.orderBy('score', 'desc'), fs.limit(10)))).docs; }
+  catch (e) { if (e.code === 'failed-precondition') console.warn('[index needed]', e.message); }
+  try { return (await fs.getDocs(fs.query(fs.collection(db, SCORES), fs.where('dev', '==', true), ...extra, fs.limit(10)))).docs; } catch (e) { return []; }
 }
 async function fetchRows(scope, diff) {
   const { fs, db } = await fb(), col = fs.collection(db, SCORES), cls = scope !== 'world' ? scope : '';
