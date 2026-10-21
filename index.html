@@ -670,6 +670,7 @@ html[data-skin="day"] .skin-pop { box-shadow: 0 14px 30px -10px rgba(90,60,20,.4
       <p class="tagline">Hear the interval. Find the note. Lasso the outlaws.</p>
     </div>
     <div class="topbtns">
+      <button type="button" class="sound-btn" id="sound-btn-home" aria-pressed="true">🔊 Sound</button>
       <div class="skin-menu">
         <button type="button" id="skin-btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="skin-pop">🎨 Skins</button>
         <div class="skin-pop" id="skin-pop" role="dialog" aria-label="Skins" hidden>
@@ -769,6 +770,7 @@ html[data-skin="day"] .skin-pop { box-shadow: 0 14px 30px -10px rgba(90,60,20,.4
       <button type="button" id="cashout" class="twoline trail-only"><span>💰 Cash out</span><small id="cashout-amt">$100</small></button>
       <button type="button" id="practice-end" class="practice-only">End practice</button>
       <label class="instr-game" data-tip="Change the instrument the notes play on">🎵 <select id="instr-game" aria-label="Instrument"></select></label>
+      <button type="button" class="sound-btn" id="sound-btn" aria-pressed="true">🔊</button>
       <button type="button" id="fs-btn" data-tip="Fill the whole screen (Esc to leave)">⛶ Full screen</button>
     </div>
   </header>
@@ -1419,8 +1421,10 @@ function noteName(n) {
 
 /* ---------- Audio ---------- */
 let AC, MASTER;
+// the 🔊 / 🔇 button (home page and the game bar): off silences everything, the intro included. Saved on this device.
+let soundOn = true; try { soundOn = localStorage.getItem('earshot:sound') !== 'off'; } catch {}
 function ac() {
-  if (!AC) { AC = new (window.AudioContext || window.webkitAudioContext)(); MASTER = AC.createGain(); MASTER.gain.value = .6; MASTER.connect(AC.destination); MTGSound.ctx(AC); MTGSound.out(MASTER); }
+  if (!AC) { AC = new (window.AudioContext || window.webkitAudioContext)(); MASTER = AC.createGain(); MASTER.gain.value = soundOn ? .6 : 0; MASTER.connect(AC.destination); MTGSound.ctx(AC); MTGSound.out(MASTER); }
   if (AC.state === 'suspended') AC.resume();
   return AC;
 }
@@ -2954,7 +2958,32 @@ $('songbook').addEventListener('click', e => { const b = e.target.closest('[data
   .forEach(([sel, k]) => document.querySelectorAll(sel).forEach(el => setTip(el, TIPS[k])));
 setTip($('fs-btn'), $('fs-btn').dataset.tip);
 /* MTG_TEST setup */ MTGTest.setup({ game: 'earshot', hide: ["#who-btn", "#board-btn", "#teacher-btn", "#songbook-btn-home"], apply: () => { applySettingsFromUrl(); }, start: () => { startRun(); } }); /* /MTG_TEST setup */
+/* the Earshot Saloon intro sound (his "Earshot Saloon" voice-over over twangy western music: banjo, upright bass, brushed drums; built in docs/sound/):
+   plays every time the page opens, like Rooftop Runner and Brainwaves. Browsers often block sound until the first click or key press, so if starting
+   right away is blocked it starts on the first click. Skipped when sound is off and in test mode (the test screen has its own sting). */
+let introAudio = null, introDone = false;
+function playIntro() {
+  if (introDone || !soundOn || (window.MTGTest && MTGTest.active)) return;
+  try {
+    introAudio = introAudio || new Audio('sounds/earshot-intro.m4a'); introAudio.volume = .9;
+    const pr = introAudio.play(); if (pr) pr.then(() => { introDone = true; }).catch(() => {});
+  } catch {}
+}
+['pointerdown', 'keydown'].forEach(ev => addEventListener(ev, () => playIntro(), true));
+function syncSound() {
+  [['sound-btn-home', ' Sound'], ['sound-btn', '']].forEach(([id, word]) => { const b = $(id);
+    b.textContent = (soundOn ? '🔊' : '🔇') + word; b.setAttribute('aria-pressed', String(soundOn)); b.setAttribute('aria-label', soundOn ? 'Sound on' : 'Sound off');
+    setTip(b, soundOn ? 'Sound is on · turn it off' : 'Sound is off · turn it on'); });
+  if (MASTER) MASTER.gain.value = soundOn ? .6 : 0;
+}
+['sound-btn-home', 'sound-btn'].forEach(id => $(id).addEventListener('click', () => {
+  soundOn = !soundOn; try { localStorage.setItem('earshot:sound', soundOn ? 'on' : 'off'); } catch {}
+  if (!soundOn && introAudio) introAudio.pause();
+  syncSound();
+}));
+syncSound();
 loadSettings(); drawHome(); applyUrlSetup(); dealerSVG(); loadPosters(); updateWho(); drawPosters(); refreshClass(); pullPosters();
+playIntro();   // the intro sound: try right away (test mode is known by now); if the browser says no, the first click or key press plays it
 document.fonts?.load('40px "Noto Music"', '\u{1D11E}\u{1D122}♯♭\u{1D12B}\u{1D12A}').then(() => { if (S.hand) refreshFaces(S.phase === 'result'); }).catch(() => {});
 </script>
 <!-- MTG_ASSIGN start: identical in every game, only data-game changes. Master copy: Music Games/shared/mtg-assign.snippet.html (install with shared/apply-assign.py). -->
