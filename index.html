@@ -2271,13 +2271,13 @@ function askHank() {
 }
 
 /* ---------- Ending a run: the Sheriff's Report, and the score posts ---------- */
-let lastRun = null, savedRunId = null, saving = false;
+let lastRun = null, savedRunId = null, savedWorldId = null, saving = false;
 function endRun(busted) {
   stopClock(); S.tok++; S.phase = 'over'; syncTray();
   const st = S.stats;
   lastRun = { score: busted ? Math.floor(S.best / 2) : S.bank, busted, hands: st.total, acc: st.total ? Math.round(st.right / st.total * 100) : 0,
     town: S.town + 1, outlaws: st.lassoed.length, diff: S.diff, clef: S.clef, wasGuest: !getProfile() };
-  savedRunId = null;
+  savedRunId = savedWorldId = null;
   if (window.MTGTest && MTGTest.running) { MTGTest.finish({ acc: lastRun.acc, score: lastRun.score }); return; }   // test mode: the test screen shows the result
   if (st.total > 0) MTG_HIST.run('earshot', { score: lastRun.score, level: lastRun.town, acc: lastRun.acc, caught: lastRun.outlaws });
   showReport();
@@ -2322,7 +2322,7 @@ function syncSaveLine() {
 function startRun() {
   if (window.MTGTest && !MTGTest.canStart()) return;
   Object.assign(S, { town: 0, bank: 100, best: 100, streak: 0, stats: freshStats(), handNo: 0, noon: null });
-  lastRun = null; savedRunId = null;
+  lastRun = null; savedRunId = savedWorldId = null;
   document.body.classList.toggle('practice', S.mode === 'practice');
   $('overlay').classList.remove('on');
   preloadSound(); go('game'); drawPosters(); startTown();
@@ -2912,21 +2912,35 @@ async function devRows(fs, db, extra = []) {
   catch (e) { if (e.code === 'failed-precondition') console.warn('[index needed]', e.message); }
   try { return (await fs.getDocs(fs.query(fs.collection(db, SCORES), fs.where('dev', '==', true), ...extra, fs.limit(10)))).docs; } catch (e) { return []; }
 }
+// PRIVACY (2026-10-26): a score with a name is saved inside its class (classes/<code>/earshot_scores), so reading it needs the code.
+// The World board reads world_scores/earshot_<diff>/runs: the student's first name and last initial, the score, accuracy, icon
+// and "clef town outlaws [bust]" in level. The developer's runs (Maestro) stay in the old top level collection.
+const EARSHOT_DIFFS = ['newbie', 'easy', 'medium', 'hard', 'expert'];
+// The World board shows the student's own first name and last initial, like the class boards (David, 2026-10-29: no random game names).
+function myNick() { try { const p = JSON.parse(localStorage.getItem('rdt_profile_v1') || 'null'); return p && p.first && p.init ? `${p.first.charAt(0).toUpperCase()}${p.first.slice(1)} ${p.init}.` : ''; } catch (e) { return ''; } }
+const classCol = (fs, db, code) => fs.collection(db, 'classes', code, SCORES);
+const worldCol = (fs, db, diff) => fs.collection(db, 'world_scores', `earshot_${diff}`, 'runs');
+const worldLevel = d => [d.clef, d.town, d.outlaws].join(' ') + (d.busted ? ' bust' : '');
+const worldRow = diff => d => { const r = d.data(), [clef, town, outlaws, bust] = String(r.level || '').split(' ');
+  return { id: d.id, world: true, name: r.nick, icon: r.icon || '', score: r.score, acc: r.acc, diff, clef, town: +town || 1, outlaws: +outlaws || 0, busted: bust === 'bust', at: r.created_at && r.created_at.toDate ? r.created_at.toDate().toISOString() : new Date().toISOString() }; };
 async function fetchRows(scope, diff) {
-  const { fs, db } = await fb(), col = fs.collection(db, SCORES), cls = scope !== 'world' ? scope : '';
+  const { fs, db } = await fb(), cls = scope !== 'world' ? scope : '';
   const key = [cls ? 'class' : 'world', cls, diff].join('|'), hit = boardCache.get(key);
   if (hit && Date.now() - hit.t < BOARD_TTL) return hit;
-  const eq = [...(cls ? [fs.where('class_code', '==', cls)] : []), ...(diff !== 'all' ? [fs.where('diff', '==', diff)] : [])];
   const get = async q => (await wait(fs.getDocs(q))).docs.map(toRow);
-  const old = () => get(cls ? fs.query(col, fs.where('class_code', '==', cls)) : fs.query(col, fs.orderBy('score', 'desc'), fs.limit(400)));
-  let rows = eq.length ? await indexed('board' + (cls ? '+class' : '') + (diff !== 'all' ? '+diff' : ''), () => get(fs.query(col, ...eq, fs.orderBy('score', 'desc'), fs.limit(BOARD_N))), old)
-                      : await get(fs.query(col, fs.orderBy('score', 'desc'), fs.limit(BOARD_N)));
-  if (cls) {
-    // students in several classes are tagged with every class; and the developer's runs show on every class board
+  let rows;
+  if (!cls) {   // World: the best runs of each difficulty (25 each when showing every difficulty)
+    const n = diff !== 'all' ? BOARD_N : 25, lists = await Promise.all((diff !== 'all' ? [diff] : EARSHOT_DIFFS).map(d =>
+      wait(fs.getDocs(fs.query(worldCol(fs, db, d), fs.orderBy('score', 'desc'), fs.limit(n)))).then(s => s.docs.map(worldRow(d)))));
+    rows = [].concat(...lists);
+  } else {
+    const col = classCol(fs, db, cls);
+    rows = diff !== 'all' ? await indexed('board+class+diff', () => get(fs.query(col, fs.where('diff', '==', diff), fs.orderBy('score', 'desc'), fs.limit(BOARD_N))), () => get(col))
+                          : await get(fs.query(col, fs.orderBy('score', 'desc'), fs.limit(BOARD_N)));
+    // the developer's runs show on every class board
     const seen = new Set(rows.map(r => r.id));
-    const more = (await get(fs.query(col, fs.where('class_codes', 'array-contains', cls)))).filter(r => diff === 'all' || r.diff === diff);
     const dev = (await devRows(fs, db, diff !== 'all' ? [fs.where('diff', '==', diff)] : [])).map(toRow);
-    for (const r of more.concat(dev)) if (!seen.has(r.id)) { seen.add(r.id); rows.push(r); }
+    for (const r of dev) if (!seen.has(r.id)) { seen.add(r.id); rows.push(r); }
   }
   const e = { rows, t: Date.now() };
   boardCache.set(key, e);
@@ -2964,7 +2978,7 @@ function renderBoard() {
   if (!rows.length) { empty.innerHTML = '<b>Be the first on this board</b>Cash out (or go bust) on the trail while signed in and your score posts here.'; return; }
   list.innerHTML = top.map((r, i) => {
     const when = r.at ? new Date(r.at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '';
-    return `<li class="${i < 3 ? 'r' + (i + 1) : ''} ${r.id === savedRunId ? 'mine' : ''}">
+    return `<li class="${i < 3 ? 'r' + (i + 1) : ''} ${r.id && (r.id === savedRunId || r.id === savedWorldId) ? 'mine' : ''}">
       <span class="rank">${i + 1}</span>
       <span><span class="nm">${ICONS.includes(r.icon) ? `<span class="nm-ic">${iconHTML(r.icon)}</span>` : ''}${esc(r.name || 'Player')}${r.dev ? ' <span class="devtag" title="Developer score">DEV</span>' : ''}</span>
         <span class="tags">${[DIFF_TITLE[r.diff] || '', r.clef ? cap(r.clef) : ''].filter(Boolean).join(' · ')}</span></span>
@@ -2989,8 +3003,6 @@ async function saveRun() {
   try {
     const { fs, db } = await fb();
     const data = { name: displayName(p), score: Math.max(0, Math.round(r.score)), hands: r.hands, acc: r.acc, town: r.town, outlaws: r.outlaws, busted: r.busted, diff: r.diff, clef: r.clef, created_at: fs.serverTimestamp() };
-    if (p.classCode) data.class_code = p.classCode;
-    if (classesOf(p).length > 1) data.class_codes = classesOf(p).map(c => c.code);   // a student in 2–3 classes shows on each class board
     if (iconOf(p)) data.icon = iconOf(p);
     const dv = await devReady(data.name);
     if (dv === 'signin') {
@@ -3001,7 +3013,23 @@ async function saveRun() {
       }
       saving = false; return;
     }
-    if (dv === 'yes') { data.dev = true; data.name = DEV_NAME; }
+    if (dv !== 'yes') {   // one batch: a copy in each class (class_code = that class) + the World copy (name, score, level only)
+      const codes = [...new Set(classesOf(p).map(c => c.code))], b = fs.writeBatch(db);
+      const refs = codes.map(code => fs.doc(classCol(fs, db, code))), wref = fs.doc(worldCol(fs, db, data.diff));
+      refs.forEach((ref, i) => b.set(ref, { ...data, class_code: codes[i] }));
+      const w = { nick: myNick(), level: worldLevel(data), score: Math.min(data.score, 1000000), acc: data.acc, created_at: data.created_at };   // the World rules cap scores at 1,000,000
+      if (data.icon) w.icon = data.icon;
+      b.set(wref, w);
+      await wait(b.commit());
+      savedRunId = refs.length ? refs[0].id : wref.id; savedWorldId = wref.id;
+      boardCache.clear();
+      if (el()) { el().className = 'save ok'; el().innerHTML = `Posted as ${esc(displayName(p))}${p.classCode ? ' to ' + esc(classNames(p)) + ' and the World board' : ' to the World board'}. <button type="button" data-act="board">See where you rank</button>`; }
+      saving = false; return;
+    }
+    // the developer's runs (Maestro) stay in the old top level collection, as before
+    data.dev = true; data.name = DEV_NAME;
+    if (p.classCode) data.class_code = p.classCode;
+    if (classesOf(p).length > 1) data.class_codes = classesOf(p).map(c => c.code);
     let ref;
     try { ref = await wait(fs.addDoc(fs.collection(db, SCORES), data)); }
     catch (e) {
