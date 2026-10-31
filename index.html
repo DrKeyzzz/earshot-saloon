@@ -3547,7 +3547,7 @@ document.fonts?.load('40px "Noto Music"', '\u{1D11E}\u{1D122}♯♭\u{1D12B}\u{1
     var s = stats();
     boxes.forEach(function(b){
       if (!s) {
-        b.innerHTML = '<span aria-hidden="true">⏱</span><span>Sign in to track your time</span>';
+        b.innerHTML = '<span aria-hidden="true">⏱</span><span class="mtgtm-full">Sign in to track your time</span><span class="mtgtm-short">Track your time</span>';
         b.setAttribute('aria-label', 'Sign in to track your practice time');
         return;
       }
