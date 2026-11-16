@@ -2981,11 +2981,19 @@ function renderBoard() {
     const when = r.at ? new Date(r.at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '';
     return `<li class="${i < 3 ? 'r' + (i + 1) : ''} ${r.id && (r.id === savedRunId || r.id === savedWorldId) ? 'mine' : ''}">
       <span class="rank">${i + 1}</span>
-      <span><span class="nm">${ICONS.includes(r.icon) ? `<span class="nm-ic">${iconHTML(r.icon)}</span>` : ''}${esc(r.name || 'Player')}${r.dev ? ' <span class="devtag" title="Developer score">DEV</span>' : ''}</span>
+      <span><span class="nm"${!r.world && r.class_code ? ` data-avc="${esc(r.class_code)}" data-avs="${esc(r.sid || r.name || '')}"` : ''}>${ICONS.includes(r.icon) ? `<span class="nm-ic">${iconHTML(r.icon)}</span>` : ''}${esc(r.name || 'Player')}${r.dev ? ' <span class="devtag" title="Developer score">DEV</span>' : ''}</span>
         <span class="tags">${[DIFF_TITLE[r.diff] || '', r.clef ? cap(r.clef) : ''].filter(Boolean).join(' · ')}</span></span>
       <span class="detail">Town ${r.town ?? 1} · ${r.acc ?? 0}% · ${r.outlaws ?? 0} outlaw${r.outlaws === 1 ? '' : 's'}${r.busted ? ' · bust' : ''}${when ? ' · ' + when : ''}</span>
       <span class="score">$${Number(r.score).toLocaleString()}</span></li>`;
   }).join('');
+  avHeads(list);   // avatar head (2026-11-16): class rows only (they carry data-avc / data-avs)
+}
+// avatar head (2026-11-16): a classmate's small head before their name. MTGAvatar is set up near the end of the page,
+// so a board drawn before that waits for DOMContentLoaded; pages without it skip quietly.
+function avHeads(el) {
+  if (!el) return;
+  if (!window.MTGAvatar) { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => avHeads(el), { once: true }); return; }
+  el.querySelectorAll('[data-avs]').forEach(n => MTGAvatar.badge(n, n.dataset.avc, n.dataset.avs, 22));
 }
 $('board').addEventListener('click', e => {
   const b = e.target.closest('.seg button'); if (!b) return;
